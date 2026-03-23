@@ -1,0 +1,9 @@
+nano .gitignore
+# dependencies
+node_modules/
+
+# env files
+.env
+
+# mac files
+.DS_Store
