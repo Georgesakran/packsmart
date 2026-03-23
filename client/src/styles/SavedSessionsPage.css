@@ -1,0 +1,28 @@
+.saved-sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.saved-session-card h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.saved-session-date {
+  color: #666;
+  font-size: 14px;
+}
+
+.saved-session-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .saved-session-actions {
+    flex-direction: column;
+  }
+}

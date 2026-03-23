@@ -1,0 +1,61 @@
+.suitcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.suitcase-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 210px;
+}
+
+.suitcase-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+
+.suitcase-card p {
+  margin: 8px 0;
+  color: #555;
+}
+
+.custom-suitcase-box {
+  margin-top: 24px;
+}
+
+.custom-suitcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.custom-suitcase-grid .control-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-suitcase-grid .control-group label {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.custom-suitcase-preview {
+  margin-top: 6px;
+  margin-bottom: 16px;
+  color: #475569;
+  font-size: 15px;
+}
+
+@media (max-width: 768px) {
+  .suitcase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .suitcase-card {
+    min-height: auto;
+  }
+}
