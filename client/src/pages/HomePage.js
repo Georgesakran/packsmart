@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/HomePage.css";
+import { FEEDBACK_URL } from "../config";
 
 function HomePage() {
   const navigate = useNavigate();
@@ -25,6 +26,15 @@ function HomePage() {
           <button className="secondary-btn" onClick={() => navigate("/sessions")}>
             View Saved Sessions
           </button>
+
+          <a
+            href={FEEDBACK_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="secondary-btn home-link-btn"
+          >
+            Send Feedback
+          </a>
         </div>
 
         <div className="home-feature-list">

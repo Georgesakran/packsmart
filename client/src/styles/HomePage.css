@@ -60,6 +60,12 @@
   color: #374151;
 }
 
+.home-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .home-page {
     min-height: auto;

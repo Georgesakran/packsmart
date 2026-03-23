@@ -27,7 +27,30 @@
   color: #6b7280;
   font-size: 14px;
 }
+.navbar-feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #111827;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
 
+.navbar-feedback-btn:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .navbar-feedback-btn {
+    width: 100%;
+    margin-top: 6px;
+  }
+}
 @media (max-width: 768px) {
   .navbar-inner {
     padding: 14px;

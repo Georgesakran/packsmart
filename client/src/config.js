@@ -1,0 +1,1 @@
+export const FEEDBACK_URL = "https://docs.google.com/forms/d/e/1FAIpQLSd7GsPX4lQs2d7LTUxW33FtDtHl1tR-hNmuT-5b1exd7m_EWw/viewform?usp=header";
