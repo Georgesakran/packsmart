@@ -6,6 +6,7 @@ import SuitcasePage from "./pages/SuitcasePage";
 import ItemsPage from "./pages/ItemsPage";
 import ResultsPage from "./pages/ResultsPage";
 import SavedSessionsPage from "./pages/SavedSessionsPage";
+import { Analytics } from "@vercel/analytics/react"
 function App() {
   return (
     <Router>
@@ -17,7 +18,9 @@ function App() {
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/sessions" element={<SavedSessionsPage />} />
       </Routes>
+      <Analytics />
     </Router>
+    
   );
 }
 
