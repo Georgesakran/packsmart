@@ -1,0 +1,35 @@
+.auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+  
+  .auth-card {
+    width: 100%;
+    max-width: 520px;
+  }
+  
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .auth-error {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+  
+  .auth-footer-text {
+    margin-top: 18px;
+    color: #6b7280;
+  }
+  
+  .auth-footer-text a {
+    font-weight: 700;
+  }

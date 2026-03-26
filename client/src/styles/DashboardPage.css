@@ -1,0 +1,38 @@
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  
+  .dashboard-logout-btn {
+    min-width: 140px;
+  }
+  
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  
+  .dashboard-card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .dashboard-card p {
+    color: #6b7280;
+    margin-bottom: 18px;
+  }
+  
+  @media (max-width: 768px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .dashboard-logout-btn {
+      width: 100%;
+    }
+  }
