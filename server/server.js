@@ -28,6 +28,7 @@ const tripRoutes = require("./routes/tripRoutes");
 const tripSuitcaseRoutes = require("./routes/tripSuitcaseRoutes");
 const tripItemRoutes = require("./routes/tripItemRoutes");
 const tripCalculationRoutes = require("./routes/tripCalculationRoutes");
+const tripSuggestionRoutes = require("./routes/tripSuggestionRoutes");
 
 app.use("/api/suitcases", suitcaseRoutes);
 app.use("/api/items", itemRoutes);
@@ -38,6 +39,7 @@ app.use("/api/trips", tripRoutes);
 app.use("/api/trips", tripSuitcaseRoutes);
 app.use("/api/trips", tripItemRoutes);
 app.use("/api/trips", tripCalculationRoutes);
+app.use("/api/trips", tripSuggestionRoutes);
 
 const PORT = process.env.PORT || 5000;
 
