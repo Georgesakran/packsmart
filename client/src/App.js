@@ -9,6 +9,8 @@ import SavedSessionsPage from "./pages/SavedSessionsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
+import TripsPage from "./pages/TripsPage";
+import CreateTripPage from "./pages/CreateTripPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
@@ -33,6 +35,24 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/trips"
+          element={
+            <ProtectedRoute>
+              <TripsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/trips/new"
+          element={
+            <ProtectedRoute>
+              <CreateTripPage />
             </ProtectedRoute>
           }
         />
