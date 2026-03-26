@@ -1,0 +1,111 @@
+.trip-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  
+  .trip-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  
+  .trip-details-card {
+    min-height: 260px;
+  }
+  
+  .trip-details-card-title {
+    margin-top: 0;
+    margin-bottom: 14px;
+  }
+  
+  .trip-details-card p {
+    margin: 8px 0;
+    color: #374151;
+  }
+  
+  .trip-details-card-actions {
+    margin-top: 18px;
+  }
+  
+  .trip-items-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  
+  .trip-items-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .trip-item-chip {
+    background: #e5e7eb;
+    color: #111827;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  
+  .trip-details-actions-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .trip-result-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  
+  .trip-result-stat {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    background: #f9fafb;
+  }
+  
+  .trip-result-stat-label {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  
+  .trip-result-stat-value {
+    font-size: 20px;
+    font-weight: 800;
+  }
+  
+  .trip-details-success {
+    margin-bottom: 16px;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  
+  .trip-details-error {
+    margin-bottom: 16px;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+  }
+  
+  @media (max-width: 768px) {
+    .trip-details-grid,
+    .trip-result-summary-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .trip-details-actions-row {
+      flex-direction: column;
+    }
+  }

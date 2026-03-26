@@ -12,6 +12,7 @@ import DashboardPage from "./pages/DashboardPage";
 import TripsPage from "./pages/TripsPage";
 import CreateTripPage from "./pages/CreateTripPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import TripDetailsPage from "./pages/TripDetailsPage";
 
 function App() {
   return (
@@ -56,6 +57,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/trips/:id"
+          element={
+            <ProtectedRoute>
+              <TripDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        
       </Routes>
     </Router>
   );

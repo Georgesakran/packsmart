@@ -54,8 +54,8 @@ function CreateTripPage() {
         status: form.status,
       });
 
-      //const newTripId = response.data.tripId;
-      navigate("/trips");
+      const newTripId = response.data.tripId;
+      navigate(`/trips/${newTripId}`);
     } catch (error) {
       console.error("Create trip error:", error);
       setErrorMessage(
