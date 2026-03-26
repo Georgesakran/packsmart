@@ -23,11 +23,13 @@ const suitcaseRoutes = require("./routes/suitcaseRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 const sizeRoutes = require("./routes/sizeRoutes");
 const calculateRoutes = require("./routes/calculateRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 app.use("/api/suitcases", suitcaseRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/size-multipliers", sizeRoutes);
 app.use("/api/calculate", calculateRoutes);
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
