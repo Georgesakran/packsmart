@@ -22,7 +22,7 @@ function DashboardPage() {
               Welcome back{user?.firstName ? `, ${user.firstName}` : ""}.
             </h1>
             <p className="page-subtitle">
-              Continue building trips, manage packing plans, and keep everything organized in one place.
+              Create trips, manage suitcase plans, and continue where you left off.
             </p>
           </div>
 
@@ -50,7 +50,7 @@ function DashboardPage() {
         <div className="card dashboard-card">
           <h3>Create a New Trip</h3>
           <p>
-            Start a fresh trip with destination, travel type, weather, and suitcase planning.
+            Start a new trip with destination, timing, weather, and packing setup.
           </p>
           <button className="primary-btn" onClick={() => navigate("/trips/new")}>
             Create Trip
@@ -60,7 +60,7 @@ function DashboardPage() {
         <div className="card dashboard-card">
           <h3>My Trips</h3>
           <p>
-            View saved trips, continue editing, calculate results, and manage your packing flow.
+            Open saved trips, update details, and continue your packing plan.
           </p>
           <button className="secondary-btn" onClick={() => navigate("/trips")}>
             View Trips

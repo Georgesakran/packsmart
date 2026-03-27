@@ -89,7 +89,7 @@ function TripResultsPage() {
             <div className="trip-results-breadcrumb">Trips / Results</div>
             <h1 className="section-title">{trip?.tripName || "Trip Results"}</h1>
             <p className="page-subtitle">
-              Review your packing outcome, layout, and next steps for this trip.
+              Review the final packing result for this trip.
             </p>
           </div>
 
@@ -140,7 +140,7 @@ function TripResultsPage() {
           <div>
             <h2 className="trip-results-card-title">Quick Actions</h2>
             <p className="info-text">
-              Adjust your trip details, suitcase, or items if needed.
+              Update your trip, suitcase, or items if anything needs adjustment.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ function TripResultsPage() {
       </div>
 
       <div className="card" style={{ marginTop: "20px" }}>
-        <h2 className="trip-results-card-title">Packing Advice</h2>
+        <h2 className="trip-results-card-title">Recommended Advice</h2>
 
         {advice.length === 0 ? (
           <p className="info-text">No advice available.</p>

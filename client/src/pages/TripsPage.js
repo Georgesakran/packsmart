@@ -40,7 +40,7 @@ function TripsPage() {
           <div className="trips-kicker">Trips</div>
           <h1 className="section-title">My Trips</h1>
           <p className="page-subtitle">
-            Open an existing trip or create a new one to continue your packing plan.
+            Open a saved trip or create a new one to continue planning.
           </p>
         </div>
 
@@ -57,7 +57,7 @@ function TripsPage() {
         <div className="card trips-empty-card">
           <h3>You haven’t created any trips yet.</h3>
           <p className="info-text">
-            Start your first trip to manage suitcase setup, items, and packing results.
+            Create your first trip to start building a packing plan.
           </p>
           <button className="primary-btn" onClick={() => navigate("/trips/new")}>
             Create Your First Trip

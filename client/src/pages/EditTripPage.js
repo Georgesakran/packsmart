@@ -134,7 +134,7 @@ function EditTripPage() {
         <div className="trip-form-hero-grid">
           <div className="trip-form-hero-box">
             <span className="trip-form-hero-label">Trip setup</span>
-            <strong className="trip-form-hero-value">Update route, timing, and context</strong>
+            <strong className="trip-form-hero-value">Update timing, traveler count and status.</strong>
           </div>
 
           <div className="trip-form-hero-box">
@@ -154,7 +154,7 @@ function EditTripPage() {
           <div className="trip-form-section">
             <div className="trip-form-section-header">
               <h2>Basic Details</h2>
-              <p className="info-text">Review the main travel information for this trip.</p>
+              <p className="info-text">Review the main trip information.</p>
             </div>
 
             <div className="edit-trip-grid">

@@ -133,7 +133,7 @@ function TripDetailsPage() {
             <div className="trip-details-breadcrumb">Trips / Trip Details</div>
             <h1 className="section-title">{trip?.trip_name}</h1>
             <p className="page-subtitle">
-              Manage this trip, prepare items, and build the final packing plan.
+              Manage this trip and continue building its packing plan.
             </p>
           </div>
 
@@ -210,7 +210,7 @@ function TripDetailsPage() {
           <div>
             <h2 className="trip-details-card-title">Quick Actions</h2>
             <p className="info-text">
-              Use these actions to complete and improve this trip.
+              Use these actions to continue and update this trip.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ function TripDetailsPage() {
             </>
           ) : (
             <p className="info-text">
-              No suitcase has been assigned to this trip yet. Add one to enable calculation.
+              No suitcase has been added to this trip yet. Add a suitcase to continue.
             </p>
           )}
         </div>
@@ -324,7 +324,7 @@ function TripDetailsPage() {
         {tripItems.length === 0 ? (
           <div className="trip-empty-state">
             <p className="info-text">
-              No items have been added to this trip yet. Add items manually or generate suggestions to continue.
+              No items have been added to this trip yet. Add items or generate suggestions to continue.
             </p>
           </div>
         ) : (
@@ -345,7 +345,7 @@ function TripDetailsPage() {
         {!results ? (
           <div className="trip-empty-state">
             <p className="info-text">
-              No calculation result is available yet. Add a suitcase and items, then calculate the trip.
+              No saved result is available yet. Add a suitcase and items, then calculate this trip.
             </p>
           </div>
         ) : (

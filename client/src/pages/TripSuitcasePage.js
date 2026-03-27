@@ -144,7 +144,7 @@ function TripSuitcasePage() {
               {existingSuitcase ? "Edit Trip Suitcase" : "Add Trip Suitcase"}
             </h1>
             <p className="page-subtitle">
-              Set the suitcase details used for this trip’s packing calculation.
+              Set the suitcase details used for this trip.
             </p>
           </div>
 
@@ -186,7 +186,7 @@ function TripSuitcasePage() {
           <div className="trip-form-section">
             <div className="trip-form-section-header">
               <h2>Suitcase Setup</h2>
-              <p className="info-text">Choose the suitcase type and provide the main storage limits.</p>
+              <p className="info-text">Choose the suitcase type and set the main limits.</p>
             </div>
 
             <div className="trip-suitcase-grid">

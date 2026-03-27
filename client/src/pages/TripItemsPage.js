@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripItemsPage.css";
@@ -49,7 +49,7 @@ function TripItemsPage() {
     sizeCode: "",
   });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setPageError("");
@@ -69,11 +69,11 @@ function TripItemsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [loadData]);
 
   const selectedBaseItem = useMemo(() => {
     return baseItems.find((item) => item.id === Number(dbForm.selectedItemId));
@@ -302,7 +302,7 @@ function TripItemsPage() {
             <div className="trip-form-kicker">Trips / Items</div>
             <h1 className="section-title">Trip Items</h1>
             <p className="page-subtitle">
-              Add, edit, and organize the items linked to this trip.
+              Add, edit, and manage the items linked to this trip.            
             </p>
           </div>
 
@@ -319,7 +319,7 @@ function TripItemsPage() {
 
           <div className="trip-form-hero-box">
             <span className="trip-form-hero-label">Available actions</span>
-            <strong className="trip-form-hero-value">Add, edit, delete</strong>
+            <strong className="trip-form-hero-value">Add, edit and remove items</strong>
           </div>
         </div>
       </div>
@@ -332,7 +332,7 @@ function TripItemsPage() {
         <div className="card">
           <div className="trip-form-section-header">
             <h2 className="trip-items-card-title">Add Base Item</h2>
-            <p className="info-text">Choose an item from the main database and add it to this trip.</p>
+            <p className="info-text">Choose an item from the base library and add it to this trip.</p>
           </div>
 
           <form className="trip-items-form" onSubmit={handleAddDatabaseItem}>
@@ -389,7 +389,7 @@ function TripItemsPage() {
         <div className="card">
           <div className="trip-form-section-header">
             <h2 className="trip-items-card-title">Add Custom Item</h2>
-            <p className="info-text">Create a custom item with your own packing values.</p>
+            <p className="info-text">Create a custom item with your own packing values and behavior.</p>
           </div>
 
           <form className="trip-items-form" onSubmit={handleAddCustomItem}>
@@ -483,7 +483,7 @@ function TripItemsPage() {
           <div>
             <h2 className="trip-items-card-title">Current Trip Items</h2>
             <p className="info-text">
-              These are the items currently linked to this trip.
+              These items are currently linked to this trip.
             </p>
           </div>
 
@@ -495,7 +495,7 @@ function TripItemsPage() {
         {tripItems.length === 0 ? (
           <div className="trip-empty-state">
             <p className="info-text">
-              No items have been added to this trip yet. Add a base item or create a custom one to continue.
+             No items have been added to this trip yet. Add a base item or create a custom item to continue.
             </p>
           </div>
         ) : (
