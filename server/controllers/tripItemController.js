@@ -125,10 +125,13 @@ const getTripItems = async (req, res) => {
     }
 
     const query = `
-      SELECT *
-      FROM trip_items
-      WHERE trip_id = ?
-      ORDER BY created_at ASC
+      SELECT
+        ti.*,
+        i.name AS base_item_name
+      FROM trip_items ti
+      LEFT JOIN items i ON ti.item_id = i.id
+      WHERE ti.trip_id = ?
+      ORDER BY ti.created_at ASC
     `;
 
     db.query(query, [tripId], (err, results) => {

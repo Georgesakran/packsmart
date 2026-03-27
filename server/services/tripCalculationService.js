@@ -193,7 +193,7 @@ const getPackingPriority = (item) => {
       return {
         tripItemId: item.id,
         itemId: item.item_id,
-        name: item.custom_name || item.name || "Custom Item",
+        name: item.custom_name || item.base_item_name || "Custom Item",
         category: item.category || "custom",
         quantity,
         selectedSize: item.size_code || null,

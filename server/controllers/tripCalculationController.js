@@ -39,8 +39,11 @@ const calculateTrip = async (req, res) => {
     `;
 
     const tripItemsQuery = `
-      SELECT ti.*
+      SELECT
+        ti.*,
+        i.name AS base_item_name
       FROM trip_items ti
+      LEFT JOIN items i ON ti.item_id = i.id
       WHERE ti.trip_id = ?
       ORDER BY ti.created_at ASC
     `;

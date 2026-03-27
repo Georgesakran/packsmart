@@ -504,7 +504,7 @@ function TripItemsPage() {
               <div key={item.id} className="trip-item-row">
                 <div className="trip-item-row-content">
                   <h3 className="trip-item-row-title">
-                    {item.custom_name || `Item #${item.item_id || item.id}`}
+                    {item.custom_name || item.base_item_name || `Item #${item.item_id || item.id}`}
                   </h3>
                   <p className="trip-item-row-meta">
                     <strong>Source:</strong> {item.source_type}
