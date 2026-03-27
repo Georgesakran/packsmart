@@ -13,6 +13,7 @@ import TripsPage from "./pages/TripsPage";
 import CreateTripPage from "./pages/CreateTripPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import TripDetailsPage from "./pages/TripDetailsPage";
+import TripItemsPage from "./pages/TripItemsPage";
 
 function App() {
   return (
@@ -63,6 +64,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TripDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:id/items"
+          element={
+            <ProtectedRoute>
+              <TripItemsPage />
             </ProtectedRoute>
           }
         />
