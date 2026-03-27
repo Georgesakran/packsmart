@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState , useMemo} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripDetailsPage.css";
@@ -24,29 +24,33 @@ function TripDetailsPage() {
       setLoading(true);
       setPageError("");
   
-      const tripRes = await api.get(`/trips/${id}`);
-      setTrip(tripRes.data);
+      const [tripRes, suitcaseRes, itemsRes, resultsRes] =
+        await Promise.allSettled([
+          api.get(`/trips/${id}`),
+          api.get(`/trips/${id}/suitcase`),
+          api.get(`/trips/${id}/items`),
+          api.get(`/trips/${id}/results`),
+        ]);
   
-      try {
-        const suitcaseRes = await api.get(`/trips/${id}/suitcase`);
-        setSuitcase(suitcaseRes.data);
-      } catch {
-        setSuitcase(null);
+      // Trip (required)
+      if (tripRes.status === "fulfilled") {
+        setTrip(tripRes.value.data);
+      } else {
+        throw tripRes.reason;
       }
   
-      try {
-        const itemsRes = await api.get(`/trips/${id}/items`);
-        setTripItems(itemsRes.data || []);
-      } catch {
-        setTripItems([]);
-      }
+      // Optional data (safe fallback)
+      setSuitcase(
+        suitcaseRes.status === "fulfilled" ? suitcaseRes.value.data : null
+      );
   
-      try {
-        const resultsRes = await api.get(`/trips/${id}/results`);
-        setResults(resultsRes.data);
-      } catch {
-        setResults(null);
-      }
+      setTripItems(
+        itemsRes.status === "fulfilled" ? itemsRes.value.data || [] : []
+      );
+  
+      setResults(
+        resultsRes.status === "fulfilled" ? resultsRes.value.data : null
+      );
     } catch (error) {
       console.error("Load trip details error:", error);
       setPageError(
@@ -56,7 +60,7 @@ function TripDetailsPage() {
       setLoading(false);
     }
   }, [id]);
-
+  
   useEffect(() => {
     loadTripData();
   }, [loadTripData]);
@@ -100,6 +104,15 @@ function TripDetailsPage() {
     }
   };
 
+  const tripStatusLabel = useMemo(() => {
+    if (!trip?.status) return "draft";
+    return trip.status;
+  }, [trip]);
+
+  const suitcaseStatus = suitcase ? "Added" : "Missing";
+  const itemsStatus = tripItems.length > 0 ? `${tripItems.length} items` : "No items";
+  const resultsStatus = results ? "Calculated" : "Not calculated";
+
   if (loading) {
     return <div className="page-container">Loading trip details...</div>;
   }
@@ -114,17 +127,44 @@ function TripDetailsPage() {
 
   return (
     <div className="page-container">
-      <div className="trip-details-header">
-        <div>
-          <h1 className="section-title">{trip?.trip_name}</h1>
-          <p className="page-subtitle">
-            Manage this trip, review its packing setup, and calculate the result.
-          </p>
+      <div className="trip-details-hero card">
+        <div className="trip-details-hero-top">
+          <div>
+            <div className="trip-details-breadcrumb">Trips / Trip Details</div>
+            <h1 className="section-title">{trip?.trip_name}</h1>
+            <p className="page-subtitle">
+              Manage this trip, prepare items, and build the final packing plan.
+            </p>
+          </div>
+
+          <div className={`trip-status-badge trip-status-${tripStatusLabel}`}>
+            {tripStatusLabel}
+          </div>
         </div>
 
-        <button className="secondary-btn" onClick={() => navigate("/trips")}>
-          Back to Trips
-        </button>
+        <div className="trip-hero-meta">
+          <div className="trip-hero-meta-item">
+            <span className="trip-hero-meta-label">Destination</span>
+            <span className="trip-hero-meta-value">{trip?.destination || "Not set"}</span>
+          </div>
+
+          <div className="trip-hero-meta-item">
+            <span className="trip-hero-meta-label">Duration</span>
+            <span className="trip-hero-meta-value">
+              {trip?.duration_days ? `${trip.duration_days} days` : "Not set"}
+            </span>
+          </div>
+
+          <div className="trip-hero-meta-item">
+            <span className="trip-hero-meta-label">Travel Type</span>
+            <span className="trip-hero-meta-value">{trip?.travel_type}</span>
+          </div>
+
+          <div className="trip-hero-meta-item">
+            <span className="trip-hero-meta-label">Weather</span>
+            <span className="trip-hero-meta-value">{trip?.weather_type}</span>
+          </div>
+        </div>
       </div>
 
       {actionMessage && (
@@ -134,6 +174,98 @@ function TripDetailsPage() {
       {actionError && (
         <div className="card trip-details-error">{actionError}</div>
       )}
+
+      <div className="trip-details-status-grid">
+        <div className="card trip-status-card">
+          <div className="trip-status-card-label">Suitcase</div>
+          <div className="trip-status-card-value">{suitcaseStatus}</div>
+          <div className="trip-status-card-subtext">
+            {suitcase ? suitcase.name : "No suitcase assigned yet"}
+          </div>
+        </div>
+
+        <div className="card trip-status-card">
+          <div className="trip-status-card-label">Items</div>
+          <div className="trip-status-card-value">{itemsStatus}</div>
+          <div className="trip-status-card-subtext">
+            {tripItems.length > 0
+              ? "Trip items are ready to calculate"
+              : "Add items or generate suggestions"}
+          </div>
+        </div>
+
+        <div className="card trip-status-card">
+          <div className="trip-status-card-label">Results</div>
+          <div className="trip-status-card-value">{resultsStatus}</div>
+          <div className="trip-status-card-subtext">
+            {results
+              ? "A saved result is available for this trip"
+              : "No calculation has been saved yet"}
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-actions-header">
+          <div>
+            <h2 className="trip-details-card-title">Quick Actions</h2>
+            <p className="info-text">
+              Use these actions to complete and improve this trip.
+            </p>
+          </div>
+
+          <button className="secondary-btn" onClick={() => navigate("/trips")}>
+            Back to Trips
+          </button>
+        </div>
+
+        <div className="trip-actions-grid">
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/edit`)}
+          >
+            Edit Trip
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/suitcase`)}
+          >
+            {suitcase ? "Edit Suitcase" : "Add Suitcase"}
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/items`)}
+          >
+            Manage Items
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={handleGenerateSuggestions}
+            disabled={generating}
+          >
+            {generating ? "Generating..." : "Generate Suggestions"}
+          </button>
+
+          <button
+            className="primary-btn"
+            onClick={handleCalculateTrip}
+            disabled={calculating}
+          >
+            {calculating ? "Calculating..." : "Calculate Trip"}
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/results`)}
+            disabled={!results}
+          >
+            Open Full Results
+          </button>
+        </div>
+      </div>
 
       <div className="trip-details-grid">
         <div className="card trip-details-card">
@@ -165,17 +297,10 @@ function TripDetailsPage() {
               </p>
             </>
           ) : (
-            <p className="info-text">No suitcase assigned yet.</p>
+            <p className="info-text">
+              No suitcase has been assigned to this trip yet. Add one to enable calculation.
+            </p>
           )}
-
-          <div className="trip-details-card-actions">
-            <button
-              className="secondary-btn"
-              onClick={() => navigate(`/trips/${id}/suitcase`)}
-            >
-              {suitcase ? "Edit Suitcase" : "Add Suitcase"}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -197,7 +322,11 @@ function TripDetailsPage() {
         </div>
 
         {tripItems.length === 0 ? (
-          <p className="info-text">No items added yet.</p>
+          <div className="trip-empty-state">
+            <p className="info-text">
+              No items have been added to this trip yet. Add items manually or generate suggestions to continue.
+            </p>
+          </div>
         ) : (
           <div className="trip-items-list">
             {tripItems.map((item) => (
@@ -208,31 +337,17 @@ function TripDetailsPage() {
             ))}
           </div>
         )}
-
-        <div className="trip-details-actions-row">
-          <button
-            className="secondary-btn"
-            onClick={handleGenerateSuggestions}
-            disabled={generating}
-          >
-            {generating ? "Generating..." : "Generate Suggestions"}
-          </button>
-
-          <button
-            className="primary-btn"
-            onClick={handleCalculateTrip}
-            disabled={calculating}
-          >
-            {calculating ? "Calculating..." : "Calculate Trip"}
-          </button>
-        </div>
       </div>
 
       <div className="card" style={{ marginTop: "20px" }}>
         <h2 className="trip-details-card-title">Latest Result</h2>
 
         {!results ? (
-          <p className="info-text">No calculation result yet.</p>
+          <div className="trip-empty-state">
+            <p className="info-text">
+              No calculation result is available yet. Add a suitcase and items, then calculate the trip.
+            </p>
+          </div>
         ) : (
           <div className="trip-result-summary-grid">
             <div className="trip-result-stat">
@@ -262,17 +377,6 @@ function TripDetailsPage() {
                 {results.totals?.remainingVolumeCm3} cm³
               </div>
             </div>
-          </div>
-        )}
-
-        {results && (
-          <div className="trip-details-actions-row" style={{ marginTop: "18px" }}>
-            <button
-              className="secondary-btn"
-              onClick={() => navigate(`/trips/${id}/results`)}
-            >
-              Open Full Results
-            </button>
           </div>
         )}
       </div>
