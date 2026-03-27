@@ -30,8 +30,8 @@ const tripItemRoutes = require("./routes/tripItemRoutes");
 const tripCalculationRoutes = require("./routes/tripCalculationRoutes");
 const tripSuggestionRoutes = require("./routes/tripSuggestionRoutes");
 
-app.use("/api/suitcases", suitcaseRoutes);
-app.use("/api/items", itemRoutes);
+// app.use("/api/suitcases", suitcaseRoutes);
+// app.use("/api/items", itemRoutes);
 app.use("/api/size-multipliers", sizeRoutes);
 app.use("/api/calculate", calculateRoutes);
 app.use("/api/auth", authRoutes);

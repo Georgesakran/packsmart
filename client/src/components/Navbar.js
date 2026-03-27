@@ -1,11 +1,12 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
 import { FEEDBACK_URL } from "../config";
 import { useAuth } from "../contexts/AuthContext";
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
@@ -13,11 +14,13 @@ function Navbar() {
     navigate("/login");
   };
 
+  const isActive = (path) => location.pathname === path;
+
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        <div>
-          <Link to="/">
+        <div className="navbar-left">
+          <Link to="/" className="navbar-brand">
             <h2 className="navbar-logo">PackSmart</h2>
           </Link>
           <span className="navbar-tagline">Smart suitcase planning for travelers</span>
@@ -30,24 +33,42 @@ function Navbar() {
             rel="noreferrer"
             className="navbar-feedback-btn"
           >
-            Send Feedback
+            Feedback
           </a>
 
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="navbar-feedback-btn">
+              <Link
+                to="/dashboard"
+                className={`navbar-feedback-btn ${isActive("/dashboard") ? "navbar-link-active" : ""}`}
+              >
                 Dashboard
               </Link>
+
+              <Link
+                to="/trips"
+                className={`navbar-feedback-btn ${isActive("/trips") ? "navbar-link-active" : ""}`}
+              >
+                My Trips
+              </Link>
+
               <button className="navbar-feedback-btn" onClick={handleLogout}>
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="navbar-feedback-btn">
+              <Link
+                to="/login"
+                className={`navbar-feedback-btn ${isActive("/login") ? "navbar-link-active" : ""}`}
+              >
                 Login
               </Link>
-              <Link to="/register" className="navbar-feedback-btn">
+
+              <Link
+                to="/register"
+                className={`navbar-feedback-btn ${isActive("/register") ? "navbar-link-active" : ""}`}
+              >
                 Register
               </Link>
             </>

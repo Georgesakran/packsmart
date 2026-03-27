@@ -1,53 +1,101 @@
+.trips-kicker {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .trips-page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-  }
-  
-  .trips-header-btn {
-    min-width: 160px;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.trips-header-btn {
+  min-width: 160px;
+}
+
+.trips-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.trip-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 250px;
+}
+
+.trip-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.trip-card-title {
+  margin: 0;
+}
+
+.trip-card-body {
+  flex: 1;
+}
+
+.trip-card-meta {
+  margin: 8px 0;
+  color: #4b5563;
+}
+
+.trip-card-actions {
+  margin-top: 18px;
+}
+
+.trip-status-pill {
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.trip-status-pill-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.trip-status-pill-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.trip-status-pill-neutral {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.trips-empty-card {
+  text-align: left;
+}
+
+.trips-error-box {
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
   .trips-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    grid-template-columns: 1fr;
   }
-  
-  .trip-card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 240px;
+
+  .trips-header-btn {
+    width: 100%;
   }
-  
-  .trip-card-title {
-    margin-top: 0;
-    margin-bottom: 12px;
-  }
-  
-  .trip-card-meta {
-    margin: 8px 0;
-    color: #4b5563;
-  }
-  
-  .trip-card-actions {
-    margin-top: 18px;
-  }
-  
-  .trips-error-box {
-    color: #b91c1c;
-  }
-  
-  @media (max-width: 768px) {
-    .trips-grid {
-      grid-template-columns: 1fr;
-    }
-  
-    .trips-header-btn {
-      width: 100%;
-    }
-  }
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripResultsPage.css";
@@ -38,11 +38,19 @@ function TripResultsPage() {
     }
 
     return items.map((item, index) => (
-      <div key={`${item.tripItemId || item.itemId}-${index}`} className="trip-results-layout-chip">
+      <div
+        key={`${item.tripItemId || item.itemId}-${index}`}
+        className="trip-results-layout-chip"
+      >
         {item.name} × {item.quantity}
       </div>
     ));
   };
+
+  const fitStatus = useMemo(() => {
+    if (!resultData?.totals) return "unknown";
+    return resultData.totals.overallFits ? "good" : "bad";
+  }, [resultData]);
 
   if (loading) {
     return <div className="page-container">Loading trip results...</div>;
@@ -64,50 +72,112 @@ function TripResultsPage() {
     );
   }
 
-  const { trip, suitcase, totals, packingOrder = [], suitcaseLayout = {}, advice = [] } =
-    resultData;
+  const {
+    trip,
+    suitcase,
+    totals,
+    packingOrder = [],
+    suitcaseLayout = {},
+    advice = [],
+  } = resultData;
 
   return (
     <div className="page-container">
-      <div className="trip-results-header">
-        <div>
-          <h1 className="section-title">{trip?.tripName || "Trip Results"}</h1>
-          <p className="page-subtitle">
-            Review the full packing result for this trip.
-          </p>
+      <div className="trip-results-hero card">
+        <div className="trip-results-hero-top">
+          <div>
+            <div className="trip-results-breadcrumb">Trips / Results</div>
+            <h1 className="section-title">{trip?.tripName || "Trip Results"}</h1>
+            <p className="page-subtitle">
+              Review your packing outcome, layout, and next steps for this trip.
+            </p>
+          </div>
+
+          <div
+            className={
+              fitStatus === "good"
+                ? "trip-results-fit-badge trip-results-fit-good"
+                : "trip-results-fit-badge trip-results-fit-bad"
+            }
+          >
+            {fitStatus === "good" ? "Fits suitcase" : "Needs adjustment"}
+          </div>
         </div>
 
-        <button
-          className="secondary-btn"
-          onClick={() => navigate(`/trips/${id}`)}
-        >
-          Back to Trip
-        </button>
-      </div>
+        <div className="trip-results-hero-meta">
+          <div className="trip-results-hero-meta-item">
+            <span className="trip-results-hero-meta-label">Trip</span>
+            <span className="trip-results-hero-meta-value">
+              {trip?.tripName || "N/A"}
+            </span>
+          </div>
 
-      <div className="trip-results-top-grid">
-        <div className="card">
-          <h2 className="trip-results-card-title">Trip</h2>
-          <p><strong>Name:</strong> {trip?.tripName || "N/A"}</p>
-          <p><strong>Destination:</strong> {trip?.destination || "Not set"}</p>
-        </div>
+          <div className="trip-results-hero-meta-item">
+            <span className="trip-results-hero-meta-label">Destination</span>
+            <span className="trip-results-hero-meta-value">
+              {trip?.destination || "Not set"}
+            </span>
+          </div>
 
-        <div className="card">
-          <h2 className="trip-results-card-title">Suitcase</h2>
-          {suitcase ? (
-            <>
-              <p><strong>Name:</strong> {suitcase.name}</p>
-              <p><strong>Volume:</strong> {suitcase.volumeCm3} cm³</p>
-              <p><strong>Max Weight:</strong> {suitcase.maxWeightKg} kg</p>
-            </>
-          ) : (
-            <p className="info-text">No suitcase found.</p>
-          )}
+          <div className="trip-results-hero-meta-item">
+            <span className="trip-results-hero-meta-label">Suitcase</span>
+            <span className="trip-results-hero-meta-value">
+              {suitcase?.name || "No suitcase"}
+            </span>
+          </div>
+
+          <div className="trip-results-hero-meta-item">
+            <span className="trip-results-hero-meta-label">Max Weight</span>
+            <span className="trip-results-hero-meta-value">
+              {suitcase?.maxWeightKg ?? "N/A"} kg
+            </span>
+          </div>
         </div>
       </div>
 
       <div className="card" style={{ marginTop: "20px" }}>
-        <h2 className="trip-results-card-title">Totals</h2>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Quick Actions</h2>
+            <p className="info-text">
+              Adjust your trip details, suitcase, or items if needed.
+            </p>
+          </div>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}`)}
+          >
+            Back to Trip
+          </button>
+        </div>
+
+        <div className="trip-results-actions-grid">
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/items`)}
+          >
+            Manage Items
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/suitcase`)}
+          >
+            Manage Suitcase
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/edit`)}
+          >
+            Edit Trip
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <h2 className="trip-results-card-title">Summary</h2>
 
         <div className="trip-results-summary-grid">
           <div className="trip-results-stat">
@@ -139,23 +209,24 @@ function TripResultsPage() {
           </div>
         </div>
 
+        <div
+          className={
+            totals?.overallFits
+              ? "trip-results-status-banner trip-results-status-banner-good"
+              : "trip-results-status-banner trip-results-status-banner-bad"
+          }
+        >
+          {totals?.overallFits
+            ? "This packing setup should fit your suitcase."
+            : "This setup may exceed your suitcase capacity or weight limit."}
+        </div>
+
         <div className="trip-results-checks">
           <p>
             <strong>Volume Fits:</strong> {totals?.volumeFits ? "Yes" : "No"}
           </p>
           <p>
             <strong>Weight Fits:</strong> {totals?.weightFits ? "Yes" : "No"}
-          </p>
-          <p
-            className={
-              totals?.overallFits
-                ? "trip-results-status-good"
-                : "trip-results-status-bad"
-            }
-          >
-            {totals?.overallFits
-              ? "This packing setup should fit your suitcase."
-              : "This setup may exceed your suitcase capacity."}
           </p>
         </div>
       </div>
@@ -227,7 +298,7 @@ function TripResultsPage() {
       </div>
 
       <div className="card" style={{ marginTop: "20px" }}>
-        <h2 className="trip-results-card-title">Advice</h2>
+        <h2 className="trip-results-card-title">Packing Advice</h2>
 
         {advice.length === 0 ? (
           <p className="info-text">No advice available.</p>

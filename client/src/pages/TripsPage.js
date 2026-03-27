@@ -27,13 +27,20 @@ function TripsPage() {
     fetchTrips();
   }, []);
 
+  const getStatusClass = (status) => {
+    if (status === "calculated") return "trip-status-pill trip-status-pill-good";
+    if (status === "archived") return "trip-status-pill trip-status-pill-warn";
+    return "trip-status-pill trip-status-pill-neutral";
+  };
+
   return (
     <div className="page-container">
       <div className="trips-page-header">
         <div>
+          <div className="trips-kicker">Trips</div>
           <h1 className="section-title">My Trips</h1>
           <p className="page-subtitle">
-            View your saved trips and continue building your packing plans.
+            Open an existing trip or create a new one to continue your packing plan.
           </p>
         </div>
 
@@ -47,10 +54,10 @@ function TripsPage() {
       ) : errorMessage ? (
         <div className="card trips-error-box">{errorMessage}</div>
       ) : trips.length === 0 ? (
-        <div className="card">
-          <h3>No trips yet</h3>
+        <div className="card trips-empty-card">
+          <h3>You haven’t created any trips yet.</h3>
           <p className="info-text">
-            Start by creating your first trip and building a packing plan.
+            Start your first trip to manage suitcase setup, items, and packing results.
           </p>
           <button className="primary-btn" onClick={() => navigate("/trips/new")}>
             Create Your First Trip
@@ -60,8 +67,12 @@ function TripsPage() {
         <div className="trips-grid">
           {trips.map((trip) => (
             <div key={trip.id} className="card trip-card">
-              <div>
+              <div className="trip-card-top">
                 <h3 className="trip-card-title">{trip.trip_name}</h3>
+                <span className={getStatusClass(trip.status)}>{trip.status}</span>
+              </div>
+
+              <div className="trip-card-body">
                 <p className="trip-card-meta">
                   <strong>Destination:</strong> {trip.destination || "Not set"}
                 </p>
@@ -74,9 +85,6 @@ function TripsPage() {
                 </p>
                 <p className="trip-card-meta">
                   <strong>Weather:</strong> {trip.weather_type}
-                </p>
-                <p className="trip-card-meta">
-                  <strong>Status:</strong> {trip.status}
                 </p>
               </div>
 
