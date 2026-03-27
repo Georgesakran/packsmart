@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripDetailsPage.css";
@@ -19,28 +19,28 @@ function TripDetailsPage() {
   const [generating, setGenerating] = useState(false);
   const [calculating, setCalculating] = useState(false);
 
-  const loadTripData = async () => {
+  const loadTripData = useCallback(async () => {
     try {
       setLoading(true);
       setPageError("");
-
+  
       const tripRes = await api.get(`/trips/${id}`);
       setTrip(tripRes.data);
-
+  
       try {
         const suitcaseRes = await api.get(`/trips/${id}/suitcase`);
         setSuitcase(suitcaseRes.data);
       } catch {
         setSuitcase(null);
       }
-
+  
       try {
         const itemsRes = await api.get(`/trips/${id}/items`);
         setTripItems(itemsRes.data || []);
       } catch {
         setTripItems([]);
       }
-
+  
       try {
         const resultsRes = await api.get(`/trips/${id}/results`);
         setResults(resultsRes.data);
@@ -55,11 +55,11 @@ function TripDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadTripData();
-  }, [id]);
+  }, [loadTripData]);
 
   const handleGenerateSuggestions = async () => {
     try {
