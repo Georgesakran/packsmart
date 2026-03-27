@@ -24,10 +24,10 @@ function App() {
       <Routes>
         {/* V1 public */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/suitcases" element={<SuitcasePage />} />
+        {/* <Route path="/suitcases" element={<SuitcasePage />} />
         <Route path="/items" element={<ItemsPage />} />
         <Route path="/results" element={<ResultsPage />} />
-        <Route path="/sessions" element={<SavedSessionsPage />} />
+        <Route path="/sessions" element={<SavedSessionsPage />} /> */}
 
         {/* V2 auth */}
         <Route path="/login" element={<LoginPage />} />
