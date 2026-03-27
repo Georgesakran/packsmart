@@ -14,6 +14,8 @@ import CreateTripPage from "./pages/CreateTripPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import TripDetailsPage from "./pages/TripDetailsPage";
 import TripItemsPage from "./pages/TripItemsPage";
+import TripResultsPage from "./pages/TripResultsPage";
+import EditTripPage from "./pages/EditTripPage";
 
 function App() {
   return (
@@ -75,7 +77,23 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/trips/:id/results"
+          element={
+            <ProtectedRoute>
+              <TripResultsPage />
+            </ProtectedRoute>
+          }
+        />
         
+        <Route
+          path="/trips/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditTripPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );
