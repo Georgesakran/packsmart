@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripItemsPage.css";
@@ -49,16 +49,16 @@ const [savingEdit, setSavingEdit] = useState(false);
     sizeCode: "",
   });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setPageError("");
-
+  
       const [tripItemsRes, baseItemsRes] = await Promise.all([
         api.get(`/trips/${id}/items`),
         api.get("/items"),
       ]);
-
+  
       setTripItems(tripItemsRes.data || []);
       setBaseItems(baseItemsRes.data || []);
     } catch (error) {
@@ -69,11 +69,11 @@ const [savingEdit, setSavingEdit] = useState(false);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [loadData]);
 
   const selectedBaseItem = useMemo(() => {
     return baseItems.find((item) => item.id === Number(dbForm.selectedItemId));
