@@ -19,6 +19,19 @@ function TripItemsPage() {
   const [addingCustomItem, setAddingCustomItem] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState(null);
 
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    customName: "",
+    quantity: 1,
+    sizeCode: "",
+    category: "",
+    audience: "unisex",
+    baseVolumeCm3: "",
+    baseWeightG: "",
+    packBehavior: "semi-rigid",
+  });
+const [savingEdit, setSavingEdit] = useState(false);
+
   const [dbForm, setDbForm] = useState({
     selectedItemId: "",
     quantity: 1,
@@ -199,6 +212,81 @@ function TripItemsPage() {
       );
     } finally {
       setDeletingItemId(null);
+    }
+  };
+
+  const startEditingItem = (item) => {
+    setActionError("");
+    setActionMessage("");
+  
+    setEditingItemId(item.id);
+    setEditForm({
+      customName: item.custom_name || "",
+      quantity: item.quantity || 1,
+      sizeCode: item.size_code || "",
+      category: item.category || "",
+      audience: item.audience || "unisex",
+      baseVolumeCm3: item.base_volume_cm3 || "",
+      baseWeightG: item.base_weight_g || "",
+      packBehavior: item.pack_behavior || "semi-rigid",
+    });
+  };
+  
+  const cancelEditingItem = () => {
+    setEditingItemId(null);
+    setEditForm({
+      customName: "",
+      quantity: 1,
+      sizeCode: "",
+      category: "",
+      audience: "unisex",
+      baseVolumeCm3: "",
+      baseWeightG: "",
+      packBehavior: "semi-rigid",
+    });
+  };
+  
+  const handleEditFormChange = (field, value) => {
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+  
+  const handleSaveEdit = async (item) => {
+    try {
+      setSavingEdit(true);
+      setActionError("");
+      setActionMessage("");
+  
+      const payload = {
+        itemId: item.item_id || null,
+        customName: item.source_type === "custom" ? editForm.customName : null,
+        sourceType: item.source_type,
+        quantity: Number(editForm.quantity) || 1,
+        sizeCode: editForm.sizeCode || null,
+        category: editForm.category || null,
+        audience: editForm.audience || "unisex",
+        baseVolumeCm3: Number(editForm.baseVolumeCm3),
+        baseWeightG: Number(editForm.baseWeightG),
+        packBehavior: editForm.packBehavior,
+      };
+  
+      const response = await api.put(
+        `/trips/${id}/items/${item.id}`,
+        payload
+      );
+  
+      setActionMessage(response.data.message || "Item updated successfully.");
+      cancelEditingItem();
+      await loadData();
+    } catch (error) {
+      console.error("Save item edit error:", error);
+      setActionError(
+        error?.response?.data?.message || "Failed to update item."
+      );
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -409,8 +497,15 @@ function TripItemsPage() {
                     <strong>Weight:</strong> {item.base_weight_g} g
                   </p>
                 </div>
-
                 <div className="trip-item-row-actions">
+                  <button
+                    className="trip-item-edit-btn"
+                    onClick={() => startEditingItem(item)}
+                    disabled={editingItemId === item.id}
+                  >
+                    Edit
+                  </button>
+
                   <button
                     className="trip-item-delete-btn"
                     onClick={() => handleDeleteItem(item.id)}
@@ -419,6 +514,134 @@ function TripItemsPage() {
                     {deletingItemId === item.id ? "Deleting..." : "Delete"}
                   </button>
                 </div>
+                {editingItemId === item.id && (
+                  <div className="trip-item-edit-box">
+                    <h4 className="trip-item-edit-title">Edit Item</h4>
+
+                    <div className="trip-item-edit-grid">
+                      {item.source_type === "custom" && (
+                        <div className="control-group">
+                          <label>Custom Name</label>
+                          <input
+                            type="text"
+                            value={editForm.customName}
+                            onChange={(e) =>
+                              handleEditFormChange("customName", e.target.value)
+                            }
+                          />
+                        </div>
+                      )}
+
+                      <div className="control-group">
+                        <label>Quantity</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={editForm.quantity}
+                          onChange={(e) =>
+                            handleEditFormChange("quantity", e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="control-group">
+                        <label>Size Code</label>
+                        <input
+                          type="text"
+                          value={editForm.sizeCode}
+                          onChange={(e) =>
+                            handleEditFormChange("sizeCode", e.target.value)
+                          }
+                          placeholder="e.g. M"
+                        />
+                      </div>
+
+                      <div className="control-group">
+                        <label>Category</label>
+                        <input
+                          type="text"
+                          value={editForm.category}
+                          onChange={(e) =>
+                            handleEditFormChange("category", e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="control-group">
+                        <label>Audience</label>
+                        <select
+                          value={editForm.audience}
+                          onChange={(e) =>
+                            handleEditFormChange("audience", e.target.value)
+                          }
+                        >
+                          <option value="unisex">unisex</option>
+                          <option value="men">men</option>
+                          <option value="women">women</option>
+                          <option value="kids">kids</option>
+                        </select>
+                      </div>
+
+                      <div className="control-group">
+                        <label>Volume (cm³)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={editForm.baseVolumeCm3}
+                          onChange={(e) =>
+                            handleEditFormChange("baseVolumeCm3", e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="control-group">
+                        <label>Weight (g)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={editForm.baseWeightG}
+                          onChange={(e) =>
+                            handleEditFormChange("baseWeightG", e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div className="control-group">
+                        <label>Pack Behavior</label>
+                        <select
+                          value={editForm.packBehavior}
+                          onChange={(e) =>
+                            handleEditFormChange("packBehavior", e.target.value)
+                          }
+                        >
+                          <option value="foldable">foldable</option>
+                          <option value="compressible">compressible</option>
+                          <option value="semi-rigid">semi-rigid</option>
+                          <option value="rigid">rigid</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="trip-item-edit-actions">
+                      <button
+                        className="secondary-btn"
+                        type="button"
+                        onClick={cancelEditingItem}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        className="primary-btn"
+                        type="button"
+                        onClick={() => handleSaveEdit(item)}
+                        disabled={savingEdit}
+                      >
+                        {savingEdit ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
