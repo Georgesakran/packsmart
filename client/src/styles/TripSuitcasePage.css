@@ -1,65 +1,66 @@
 .trip-suitcase-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.trip-suitcase-card {
+  max-width: 960px;
+}
+
+.trip-suitcase-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.trip-suitcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.trip-suitcase-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.trip-suitcase-error {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.trip-suitcase-success {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: auto;
+  margin-top: 10px;
+  transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+  .trip-suitcase-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .trip-suitcase-card {
-    max-width: 900px;
-  }
-  
-  .trip-suitcase-form {
-    display: flex;
+
+  .trip-suitcase-actions {
     flex-direction: column;
   }
-  
-  .trip-suitcase-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-  }
-  
-  .trip-suitcase-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 24px;
-    flex-wrap: wrap;
-  }
-  
-  .trip-suitcase-error {
-    margin-bottom: 16px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: #fef2f2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-  }
-  
-  .trip-suitcase-success {
-    margin-bottom: 16px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: #f0fdf4;
-    color: #166534;
-    border: 1px solid #bbf7d0;
-  }
-  
-  .checkbox-group input[type="checkbox"] {
-    width: auto;
-    margin-top: 10px;
-    transform: scale(1.2);
-  }
-  
-  @media (max-width: 768px) {
-    .trip-suitcase-grid {
-      grid-template-columns: 1fr;
-    }
-  
-    .trip-suitcase-actions {
-      flex-direction: column;
-    }
-  }
+}

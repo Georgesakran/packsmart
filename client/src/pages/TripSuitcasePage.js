@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripSuitcasePage.css";
@@ -71,6 +71,15 @@ function TripSuitcasePage() {
     }));
   };
 
+  const estimatedVolume = useMemo(() => {
+    const l = Number(form.lengthCm || 0);
+    const w = Number(form.widthCm || 0);
+    const h = Number(form.heightCm || 0);
+
+    if (!l || !w || !h) return null;
+    return l * w * h;
+  }, [form.lengthCm, form.widthCm, form.heightCm]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -127,22 +136,41 @@ function TripSuitcasePage() {
 
   return (
     <div className="page-container">
-      <div className="trip-suitcase-header">
-        <div>
-          <h1 className="section-title">
-            {existingSuitcase ? "Edit Trip Suitcase" : "Add Trip Suitcase"}
-          </h1>
-          <p className="page-subtitle">
-            Set the suitcase details that will be used for this trip calculation.
-          </p>
+      <div className="trip-form-hero card">
+        <div className="trip-form-hero-top">
+          <div>
+            <div className="trip-form-kicker">Trips / Suitcase</div>
+            <h1 className="section-title">
+              {existingSuitcase ? "Edit Trip Suitcase" : "Add Trip Suitcase"}
+            </h1>
+            <p className="page-subtitle">
+              Set the suitcase details used for this trip’s packing calculation.
+            </p>
+          </div>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}`)}
+          >
+            Back to Trip
+          </button>
         </div>
 
-        <button
-          className="secondary-btn"
-          onClick={() => navigate(`/trips/${id}`)}
-        >
-          Back to Trip
-        </button>
+        <div className="trip-form-hero-grid">
+          <div className="trip-form-hero-box">
+            <span className="trip-form-hero-label">Mode</span>
+            <strong className="trip-form-hero-value">
+              {form.suitcaseType === "custom" ? "Custom suitcase" : "Preset suitcase"}
+            </strong>
+          </div>
+
+          <div className="trip-form-hero-box">
+            <span className="trip-form-hero-label">Estimated volume from dimensions</span>
+            <strong className="trip-form-hero-value">
+              {estimatedVolume ? `${estimatedVolume} cm³` : "Not available yet"}
+            </strong>
+          </div>
+        </div>
       </div>
 
       <div className="card trip-suitcase-card">
@@ -155,88 +183,104 @@ function TripSuitcasePage() {
         )}
 
         <form className="trip-suitcase-form" onSubmit={handleSubmit}>
-          <div className="trip-suitcase-grid">
-            <div className="control-group">
-              <label>Suitcase Type</label>
-              <select
-                value={form.suitcaseType}
-                onChange={(e) => handleTypeChange(e.target.value)}
-              >
-                <option value="preset">preset</option>
-                <option value="custom">custom</option>
-              </select>
+          <div className="trip-form-section">
+            <div className="trip-form-section-header">
+              <h2>Suitcase Setup</h2>
+              <p className="info-text">Choose the suitcase type and provide the main storage limits.</p>
             </div>
 
-            <div className="control-group">
-              <label>Suitcase Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                required
-              />
+            <div className="trip-suitcase-grid">
+              <div className="control-group">
+                <label>Suitcase Type</label>
+                <select
+                  value={form.suitcaseType}
+                  onChange={(e) => handleTypeChange(e.target.value)}
+                >
+                  <option value="preset">preset</option>
+                  <option value="custom">custom</option>
+                </select>
+              </div>
+
+              <div className="control-group">
+                <label>Suitcase Name</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="control-group">
+                <label>Volume (cm³)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.volumeCm3}
+                  onChange={(e) => handleChange("volumeCm3", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="control-group">
+                <label>Max Weight (kg)</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.1"
+                  value={form.maxWeightKg}
+                  onChange={(e) => handleChange("maxWeightKg", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="trip-form-section">
+            <div className="trip-form-section-header">
+              <h2>Dimensions</h2>
+              <p className="info-text">Optional, but useful for custom suitcase planning.</p>
             </div>
 
-            <div className="control-group">
-              <label>Volume (cm³)</label>
-              <input
-                type="number"
-                min="1"
-                value={form.volumeCm3}
-                onChange={(e) => handleChange("volumeCm3", e.target.value)}
-                required
-              />
-            </div>
+            <div className="trip-suitcase-grid">
+              <div className="control-group">
+                <label>Length (cm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.lengthCm}
+                  onChange={(e) => handleChange("lengthCm", e.target.value)}
+                />
+              </div>
 
-            <div className="control-group">
-              <label>Max Weight (kg)</label>
-              <input
-                type="number"
-                min="1"
-                step="0.1"
-                value={form.maxWeightKg}
-                onChange={(e) => handleChange("maxWeightKg", e.target.value)}
-                required
-              />
-            </div>
+              <div className="control-group">
+                <label>Width (cm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.widthCm}
+                  onChange={(e) => handleChange("widthCm", e.target.value)}
+                />
+              </div>
 
-            <div className="control-group">
-              <label>Length (cm)</label>
-              <input
-                type="number"
-                min="0"
-                value={form.lengthCm}
-                onChange={(e) => handleChange("lengthCm", e.target.value)}
-              />
-            </div>
+              <div className="control-group">
+                <label>Height (cm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.heightCm}
+                  onChange={(e) => handleChange("heightCm", e.target.value)}
+                />
+              </div>
 
-            <div className="control-group">
-              <label>Width (cm)</label>
-              <input
-                type="number"
-                min="0"
-                value={form.widthCm}
-                onChange={(e) => handleChange("widthCm", e.target.value)}
-              />
-            </div>
-
-            <div className="control-group">
-              <label>Height (cm)</label>
-              <input
-                type="number"
-                min="0"
-                value={form.heightCm}
-                onChange={(e) => handleChange("heightCm", e.target.value)}
-              />
-            </div>
-
-            <div className="control-group checkbox-group">
-              <label>Custom Suitcase</label>
-              <input
-                type="checkbox"
-                checked={form.isCustom}
-                onChange={(e) => handleChange("isCustom", e.target.checked)}
-              />
+              <div className="control-group checkbox-group">
+                <label>Custom Suitcase</label>
+                <input
+                  type="checkbox"
+                  checked={form.isCustom}
+                  onChange={(e) => handleChange("isCustom", e.target.checked)}
+                />
+              </div>
             </div>
           </div>
 

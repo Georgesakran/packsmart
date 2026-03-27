@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/TripItemsPage.css";
@@ -30,7 +30,7 @@ function TripItemsPage() {
     baseWeightG: "",
     packBehavior: "semi-rigid",
   });
-const [savingEdit, setSavingEdit] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [dbForm, setDbForm] = useState({
     selectedItemId: "",
@@ -49,16 +49,16 @@ const [savingEdit, setSavingEdit] = useState(false);
     sizeCode: "",
   });
 
-  const loadData = useCallback(async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
       setPageError("");
-  
+
       const [tripItemsRes, baseItemsRes] = await Promise.all([
         api.get(`/trips/${id}/items`),
         api.get("/items"),
       ]);
-  
+
       setTripItems(tripItemsRes.data || []);
       setBaseItems(baseItemsRes.data || []);
     } catch (error) {
@@ -69,11 +69,11 @@ const [savingEdit, setSavingEdit] = useState(false);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  };
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [id]);
 
   const selectedBaseItem = useMemo(() => {
     return baseItems.find((item) => item.id === Number(dbForm.selectedItemId));
@@ -218,7 +218,7 @@ const [savingEdit, setSavingEdit] = useState(false);
   const startEditingItem = (item) => {
     setActionError("");
     setActionMessage("");
-  
+
     setEditingItemId(item.id);
     setEditForm({
       customName: item.custom_name || "",
@@ -231,7 +231,7 @@ const [savingEdit, setSavingEdit] = useState(false);
       packBehavior: item.pack_behavior || "semi-rigid",
     });
   };
-  
+
   const cancelEditingItem = () => {
     setEditingItemId(null);
     setEditForm({
@@ -245,20 +245,20 @@ const [savingEdit, setSavingEdit] = useState(false);
       packBehavior: "semi-rigid",
     });
   };
-  
+
   const handleEditFormChange = (field, value) => {
     setEditForm((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
-  
+
   const handleSaveEdit = async (item) => {
     try {
       setSavingEdit(true);
       setActionError("");
       setActionMessage("");
-  
+
       const payload = {
         itemId: item.item_id || null,
         customName: item.source_type === "custom" ? editForm.customName : null,
@@ -271,12 +271,12 @@ const [savingEdit, setSavingEdit] = useState(false);
         baseWeightG: Number(editForm.baseWeightG),
         packBehavior: editForm.packBehavior,
       };
-  
+
       const response = await api.put(
         `/trips/${id}/items/${item.id}`,
         payload
       );
-  
+
       setActionMessage(response.data.message || "Item updated successfully.");
       cancelEditingItem();
       await loadData();
@@ -296,17 +296,32 @@ const [savingEdit, setSavingEdit] = useState(false);
 
   return (
     <div className="page-container">
-      <div className="trip-items-page-header">
-        <div>
-          <h1 className="section-title">Trip Items</h1>
-          <p className="page-subtitle">
-            Add base items or custom items to this trip, then calculate your final packing plan.
-          </p>
+      <div className="trip-form-hero card">
+        <div className="trip-form-hero-top">
+          <div>
+            <div className="trip-form-kicker">Trips / Items</div>
+            <h1 className="section-title">Trip Items</h1>
+            <p className="page-subtitle">
+              Add, edit, and organize the items linked to this trip.
+            </p>
+          </div>
+
+          <button className="secondary-btn" onClick={() => navigate(`/trips/${id}`)}>
+            Back to Trip
+          </button>
         </div>
 
-        <button className="secondary-btn" onClick={() => navigate(`/trips/${id}`)}>
-          Back to Trip
-        </button>
+        <div className="trip-form-hero-grid">
+          <div className="trip-form-hero-box">
+            <span className="trip-form-hero-label">Current items</span>
+            <strong className="trip-form-hero-value">{tripItems.length}</strong>
+          </div>
+
+          <div className="trip-form-hero-box">
+            <span className="trip-form-hero-label">Available actions</span>
+            <strong className="trip-form-hero-value">Add, edit, delete</strong>
+          </div>
+        </div>
       </div>
 
       {pageError && <div className="card trip-items-error">{pageError}</div>}
@@ -315,7 +330,10 @@ const [savingEdit, setSavingEdit] = useState(false);
 
       <div className="trip-items-grid">
         <div className="card">
-          <h2 className="trip-items-card-title">Add Base Item</h2>
+          <div className="trip-form-section-header">
+            <h2 className="trip-items-card-title">Add Base Item</h2>
+            <p className="info-text">Choose an item from the main database and add it to this trip.</p>
+          </div>
 
           <form className="trip-items-form" onSubmit={handleAddDatabaseItem}>
             <div className="control-group">
@@ -369,7 +387,10 @@ const [savingEdit, setSavingEdit] = useState(false);
         </div>
 
         <div className="card">
-          <h2 className="trip-items-card-title">Add Custom Item</h2>
+          <div className="trip-form-section-header">
+            <h2 className="trip-items-card-title">Add Custom Item</h2>
+            <p className="info-text">Create a custom item with your own packing values.</p>
+          </div>
 
           <form className="trip-items-form" onSubmit={handleAddCustomItem}>
             <div className="control-group">
@@ -472,12 +493,16 @@ const [savingEdit, setSavingEdit] = useState(false);
         </div>
 
         {tripItems.length === 0 ? (
-          <p className="info-text">No items added yet.</p>
+          <div className="trip-empty-state">
+            <p className="info-text">
+              No items have been added to this trip yet. Add a base item or create a custom one to continue.
+            </p>
+          </div>
         ) : (
           <div className="trip-items-current-list">
             {tripItems.map((item) => (
               <div key={item.id} className="trip-item-row">
-                <div>
+                <div className="trip-item-row-content">
                   <h3 className="trip-item-row-title">
                     {item.custom_name || `Item #${item.item_id || item.id}`}
                   </h3>
@@ -497,6 +522,7 @@ const [savingEdit, setSavingEdit] = useState(false);
                     <strong>Weight:</strong> {item.base_weight_g} g
                   </p>
                 </div>
+
                 <div className="trip-item-row-actions">
                   <button
                     className="trip-item-edit-btn"
@@ -514,6 +540,7 @@ const [savingEdit, setSavingEdit] = useState(false);
                     {deletingItemId === item.id ? "Deleting..." : "Delete"}
                   </button>
                 </div>
+
                 {editingItemId === item.id && (
                   <div className="trip-item-edit-box">
                     <h4 className="trip-item-edit-title">Edit Item</h4>
