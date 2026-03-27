@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as  Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 // import SuitcasePage from "./pages/SuitcasePage";
@@ -19,8 +19,8 @@ import EditTripPage from "./pages/EditTripPage";
 
 function App() {
   return (
-    <Router>
-      <Navbar />
+  <>
+     <Navbar />
       <Routes>
         {/* V1 public */}
         <Route path="/" element={<HomePage />} />
@@ -95,7 +95,7 @@ function App() {
           }
         />
       </Routes>
-    </Router>
+  </> 
   );
 }
 
