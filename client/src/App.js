@@ -13,6 +13,7 @@ import TripsPage from "./pages/TripsPage";
 import CreateTripPage from "./pages/CreateTripPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import TripDetailsPage from "./pages/TripDetailsPage";
+import TripSuitcasePage from "./pages/TripSuitcasePage";
 import TripItemsPage from "./pages/TripItemsPage";
 import TripResultsPage from "./pages/TripResultsPage";
 import EditTripPage from "./pages/EditTripPage";
@@ -66,6 +67,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TripDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:id/suitcase"
+          element={
+            <ProtectedRoute>
+              <TripSuitcasePage />
             </ProtectedRoute>
           }
         />
