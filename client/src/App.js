@@ -17,6 +17,7 @@ import TripSuitcasePage from "./pages/TripSuitcasePage";
 import TripItemsPage from "./pages/TripItemsPage";
 import TripResultsPage from "./pages/TripResultsPage";
 import EditTripPage from "./pages/EditTripPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   return (
@@ -40,6 +41,15 @@ function App() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

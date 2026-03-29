@@ -52,6 +52,13 @@ function Navbar() {
                 My Trips
               </Link>
 
+              <Link
+                to="/profile"
+                className={`navbar-feedback-btn ${isActive("/profile") ? "navbar-link-active" : ""}`}
+              >
+                Profile
+              </Link>
+
               <button className="navbar-feedback-btn" onClick={handleLogout}>
                 Logout
               </button>
