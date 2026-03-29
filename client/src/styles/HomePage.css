@@ -1,87 +1,95 @@
 .home-page {
-  text-align: center;
-  min-height: calc(100vh - 90px);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .home-hero {
-  max-width: 760px;
-  width: 100%;
+  text-align: left;
 }
 
 .home-badge {
   display: inline-block;
-  background: #e0ecff;
-  color: #1d4ed8;
+  padding: 8px 12px;
   border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 14px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .home-title {
-  font-size: 52px;
-  margin-bottom: 14px;
-  line-height: 1.05;
-  letter-spacing: -1px;
+  margin: 0 0 12px 0;
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
 .home-subtitle {
-  color: #555;
-  font-size: 19px;
-  line-height: 1.6;
-  margin-bottom: 28px;
+  max-width: 760px;
+  color: #475569;
+  font-size: 17px;
+  line-height: 1.7;
+  margin-bottom: 22px;
 }
 
 .home-actions {
   display: flex;
-  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.home-feature-list {
-  margin-top: 28px;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.home-feature-chip {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: #374151;
+  margin-bottom: 20px;
 }
 
 .home-link-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
+}
+
+.home-feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-feature-chip {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.home-info-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.home-info-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.7;
 }
 
 @media (max-width: 768px) {
-  .home-page {
-    min-height: auto;
-    padding-top: 34px;
-    align-items: flex-start;
-  }
-
   .home-title {
-    font-size: 36px;
-  }
-
-  .home-subtitle {
-    font-size: 16px;
+    font-size: 30px;
   }
 
   .home-actions {
     flex-direction: column;
+  }
+
+  .home-sections-grid {
+    grid-template-columns: 1fr;
   }
 }
