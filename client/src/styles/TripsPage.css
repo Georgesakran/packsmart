@@ -90,6 +90,21 @@
   color: #b91c1c;
 }
 
+.trip-card-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trip-delete-btn {
+  border: none;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 @media (max-width: 768px) {
   .trips-grid {
     grid-template-columns: 1fr;

@@ -58,6 +58,13 @@ function Navbar() {
               >
                 Profile
               </Link>
+              
+              <Link
+                to="/saved-suitcases"
+                className={`navbar-feedback-btn ${isActive("/saved-suitcases") ? "navbar-link-active" : ""}`}
+              >
+                Suitcases
+              </Link>
 
               <button className="navbar-feedback-btn" onClick={handleLogout}>
                 Logout

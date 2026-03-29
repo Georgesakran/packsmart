@@ -192,7 +192,15 @@
 .trip-suggestion-meta-box {
   margin-bottom: 20px;
 }
-
+.trip-delete-btn {
+  border: none;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
 @media (max-width: 900px) {
   .trip-hero-meta,
   .trip-details-status-grid,

@@ -18,6 +18,7 @@ function TripDetailsPage() {
   const [actionError, setActionError] = useState("");
   const [generating, setGenerating] = useState(false);
   const [calculating, setCalculating] = useState(false);
+  const [deletingTrip, setDeletingTrip] = useState(false);
 
   const loadTripData = useCallback(async () => {
     try {
@@ -130,6 +131,35 @@ function TripDetailsPage() {
   const suitcaseStatus = suitcase ? "Added" : "Missing";
   const itemsStatus = tripItems.length > 0 ? `${tripItems.length} items` : "No items";
   const resultsStatus = results ? "Calculated" : "Not calculated";
+
+  const handleDeleteTrip = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this trip? This action cannot be undone."
+    );
+  
+    if (!confirmed) return;
+  
+    try {
+      setDeletingTrip(true);
+      setActionError("");
+      setActionMessage("");
+  
+      const response = await api.delete(`/trips/${id}`);
+  
+      setActionMessage(response.data.message || "Trip deleted successfully.");
+  
+      setTimeout(() => {
+        navigate("/trips");
+      }, 600);
+    } catch (error) {
+      console.error("Delete trip error:", error);
+      setActionError(
+        error?.response?.data?.message || "Failed to delete trip."
+      );
+    } finally {
+      setDeletingTrip(false);
+    }
+  };
 
   if (loading) {
     return <div className="page-container">Loading trip details...</div>;
@@ -328,6 +358,7 @@ function TripDetailsPage() {
           <button className="secondary-btn" onClick={() => navigate("/trips")}>
             Back to Trips
           </button>
+
         </div>
 
         <div className="trip-actions-grid">
@@ -375,6 +406,15 @@ function TripDetailsPage() {
           >
             Open Full Results
           </button>
+
+          <button
+            className="trip-delete-btn"
+            onClick={handleDeleteTrip}
+            disabled={deletingTrip}
+          >
+            {deletingTrip ? "Deleting..." : "Delete Trip"}
+          </button>
+          
         </div>
       </div>
 

@@ -1,0 +1,91 @@
+.saved-suitcases-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 16px;
+  }
+  
+  .saved-suitcases-form-card,
+  .saved-suitcases-list-card {
+    min-height: 100%;
+  }
+  
+  .saved-suitcases-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .saved-suitcases-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  
+  .saved-suitcases-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .saved-suitcases-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  
+  .saved-suitcase-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    background: #f9fafb;
+  }
+  
+  .saved-suitcase-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .saved-suitcase-meta {
+    margin: 6px 0;
+    color: #4b5563;
+  }
+  
+  .saved-suitcase-row-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .saved-suitcases-error {
+    margin-bottom: 16px;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+  }
+  
+  .saved-suitcases-success {
+    margin-bottom: 16px;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  
+  @media (max-width: 900px) {
+    .saved-suitcases-grid,
+    .saved-suitcases-form-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .saved-suitcase-row {
+      flex-direction: column;
+    }
+  
+    .saved-suitcases-actions {
+      flex-direction: column;
+    }
+  }

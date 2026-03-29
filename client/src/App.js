@@ -18,6 +18,7 @@ import TripItemsPage from "./pages/TripItemsPage";
 import TripResultsPage from "./pages/TripResultsPage";
 import EditTripPage from "./pages/EditTripPage";
 import ProfilePage from "./pages/ProfilePage";
+import SavedSuitcasesPage from "./pages/SavedSuitcasesPage";
 
 function App() {
   return (
@@ -110,6 +111,15 @@ function App() {
           element={
             <ProtectedRoute>
               <EditTripPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/saved-suitcases"
+          element={
+            <ProtectedRoute>
+              <SavedSuitcasesPage />
             </ProtectedRoute>
           }
         />

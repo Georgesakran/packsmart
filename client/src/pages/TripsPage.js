@@ -8,6 +8,7 @@ function TripsPage() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [deletingTripId, setDeletingTripId] = useState(null);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -31,6 +32,33 @@ function TripsPage() {
     if (status === "calculated") return "trip-status-pill trip-status-pill-good";
     if (status === "archived") return "trip-status-pill trip-status-pill-warn";
     return "trip-status-pill trip-status-pill-neutral";
+  };
+
+  const handleDeleteTrip = async (tripId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this trip? This action cannot be undone."
+    );
+  
+    if (!confirmed) return;
+  
+    try {
+      setDeletingTripId(tripId);
+  
+      const response = await api.delete(`/trips/${tripId}`);
+  
+      setTrips((prev) => prev.filter((trip) => trip.id !== tripId));
+  
+      if (!response?.data?.message) {
+        console.log("Trip deleted successfully.");
+      }
+    } catch (error) {
+      console.error("Delete trip from list error:", error);
+      setErrorMessage(
+        error?.response?.data?.message || "Failed to delete trip."
+      );
+    } finally {
+      setDeletingTripId(null);
+    }
   };
 
   return (
@@ -88,12 +116,20 @@ function TripsPage() {
                 </p>
               </div>
 
-              <div className="trip-card-actions">
+              <div className="trip-card-actions trip-card-actions-row">
                 <button
                   className="secondary-btn"
                   onClick={() => navigate(`/trips/${trip.id}`)}
                 >
                   Open Trip
+                </button>
+
+                <button
+                  className="trip-delete-btn"
+                  onClick={() => handleDeleteTrip(trip.id)}
+                  disabled={deletingTripId === trip.id}
+                >
+                  {deletingTripId === trip.id ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

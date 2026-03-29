@@ -12,6 +12,9 @@ function TripSuitcasePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [savedSuitcases, setSavedSuitcases] = useState([]);
+  const [selectedSavedSuitcaseId, setSelectedSavedSuitcaseId] = useState("");
+
 
   const [form, setForm] = useState({
     suitcaseType: "preset",
@@ -29,6 +32,9 @@ function TripSuitcasePage() {
       try {
         const profileRes = await api.get("/users/profile");
         setProfileInfo(profileRes.data || null);
+
+        const savedSuitcasesRes = await api.get("/saved-suitcases");
+        setSavedSuitcases(savedSuitcasesRes.data || []);  
   
         try {
           const response = await api.get(`/trips/${id}/suitcase`);
@@ -95,6 +101,30 @@ function TripSuitcasePage() {
     if (!l || !w || !h) return null;
     return l * w * h;
   }, [form.lengthCm, form.widthCm, form.heightCm]);
+
+
+  const handleSelectSavedSuitcase = (savedSuitcaseId) => {
+    setSelectedSavedSuitcaseId(savedSuitcaseId);
+  
+    const selected = savedSuitcases.find(
+      (item) => item.id === Number(savedSuitcaseId)
+    );
+  
+    if (!selected) return;
+  
+    setForm((prev) => ({
+      ...prev,
+      suitcaseType: "preset",
+      name: selected.name || "",
+      volumeCm3: selected.volume_cm3 || "",
+      maxWeightKg: selected.max_weight_kg || "",
+      lengthCm: selected.length_cm || "",
+      widthCm: selected.width_cm || "",
+      heightCm: selected.height_cm || "",
+      isCustom: false,
+    }));
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -195,6 +225,31 @@ function TripSuitcasePage() {
             Your preferred suitcase is{" "}
             <strong>{profileInfo.profile.preferredSuitcaseName}</strong>.
           </p>
+        </div>
+      )}
+      {savedSuitcases.length > 0 && (
+        <div className="card trip-suitcase-hint-box">
+          <div className="trip-form-section-header">
+            <h2>Use a Saved Suitcase</h2>
+            <p className="info-text">
+              Choose one of your saved suitcase presets to fill this trip faster.
+            </p>
+          </div>
+
+          <div className="control-group">
+            <label>Saved Suitcase Preset</label>
+            <select
+              value={selectedSavedSuitcaseId}
+              onChange={(e) => handleSelectSavedSuitcase(e.target.value)}
+            >
+              <option value="">Choose a saved suitcase</option>
+              {savedSuitcases.map((suitcase) => (
+                <option key={suitcase.id} value={suitcase.id}>
+                  {suitcase.name} — {suitcase.volume_cm3} cm³ / {suitcase.max_weight_kg} kg
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
       <div className="card trip-suitcase-card">
