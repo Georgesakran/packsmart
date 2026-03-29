@@ -77,6 +77,13 @@ function TripDetailsPage() {
       setActionMessage("");
 
       const response = await api.post(`/trips/${id}/generate-suggestions`, {});
+
+      const generatedMessage =
+        response.data?.profileUsed
+          ? `Suggestions generated successfully using your size ${response.data.profileUsed.defaultSize} and travel style ${response.data.profileUsed.travelStyle}.`
+          : response.data.message || "Suggestions generated successfully.";
+
+      setActionMessage(generatedMessage);
       setSuggestionMeta({
         durationDays: response.data?.trip?.durationDays,
         travelType: response.data?.trip?.travelType,
@@ -85,12 +92,6 @@ function TripDetailsPage() {
         defaultSize: response.data?.profileUsed?.defaultSize,
         travelStyle: response.data?.profileUsed?.travelStyle,
       });
-      const generatedMessage =
-        response.data?.profileUsed
-          ? `Suggestions generated successfully using your size ${response.data.profileUsed.defaultSize} and travel style ${response.data.profileUsed.travelStyle}.`
-          : response.data.message || "Suggestions generated successfully.";
-
-      setActionMessage(generatedMessage);
       await loadTripData();
     } catch (error) {
       console.error("Generate suggestions error:", error);
@@ -192,6 +193,49 @@ function TripDetailsPage() {
         <div className="card trip-details-error">{actionError}</div>
       )}
 
+{suggestionMeta && (
+        <div className="card trip-suggestion-meta-box">
+          <div className="trip-actions-header">
+            <div>
+              <h2 className="trip-details-card-title">Why these suggestions</h2>
+              <p className="info-text">
+                Suggestions were generated using your trip details and saved preferences.
+              </p>
+            </div>
+          </div>
+
+          <div className="trip-details-status-grid">
+            <div className="card trip-status-card">
+              <div className="trip-status-card-label">Duration</div>
+              <div className="trip-status-card-value">
+                {suggestionMeta.durationDays || "Not set"} days
+              </div>
+              <div className="trip-status-card-subtext">Trip length used in planning.</div>
+            </div>
+
+            <div className="card trip-status-card">
+              <div className="trip-status-card-label">Travel Context</div>
+              <div className="trip-status-card-value">
+                {suggestionMeta.travelType || "casual"}
+              </div>
+              <div className="trip-status-card-subtext">
+                Weather: {suggestionMeta.weatherType || "mixed"}
+              </div>
+            </div>
+
+            <div className="card trip-status-card">
+              <div className="trip-status-card-label">Your Preferences</div>
+              <div className="trip-status-card-value">
+                {suggestionMeta.defaultSize || "M"}
+              </div>
+              <div className="trip-status-card-subtext">
+                Travel style: {suggestionMeta.travelStyle || "casual"}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="trip-details-status-grid">
         <div className="card trip-status-card">
           <div className="trip-status-card-label">Suitcase</div>
@@ -271,48 +315,7 @@ function TripDetailsPage() {
           </div>
         </div>
       </div>
-      {suggestionMeta && (
-        <div className="card trip-suggestion-meta-box">
-          <div className="trip-actions-header">
-            <div>
-              <h2 className="trip-details-card-title">Why these suggestions</h2>
-              <p className="info-text">
-                Suggestions were generated using your trip details and saved preferences.
-              </p>
-            </div>
-          </div>
 
-          <div className="trip-details-status-grid">
-            <div className="card trip-status-card">
-              <div className="trip-status-card-label">Duration</div>
-              <div className="trip-status-card-value">
-                {suggestionMeta.durationDays || "Not set"} days
-              </div>
-              <div className="trip-status-card-subtext">Trip length used in planning.</div>
-            </div>
-
-            <div className="card trip-status-card">
-              <div className="trip-status-card-label">Travel Context</div>
-              <div className="trip-status-card-value">
-                {suggestionMeta.travelType || "casual"}
-              </div>
-              <div className="trip-status-card-subtext">
-                Weather: {suggestionMeta.weatherType || "mixed"}
-              </div>
-            </div>
-
-            <div className="card trip-status-card">
-              <div className="trip-status-card-label">Your Preferences</div>
-              <div className="trip-status-card-value">
-                {suggestionMeta.defaultSize || "M"}
-              </div>
-              <div className="trip-status-card-subtext">
-                Travel style: {suggestionMeta.travelStyle || "casual"}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="card" style={{ marginTop: "20px" }}>
         <div className="trip-actions-header">
           <div>
