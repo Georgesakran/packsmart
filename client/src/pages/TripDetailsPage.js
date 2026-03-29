@@ -6,7 +6,7 @@ import "../styles/TripDetailsPage.css";
 function TripDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [profileInfo, setProfileInfo] = useState(null);
   const [trip, setTrip] = useState(null);
   const [suitcase, setSuitcase] = useState(null);
   const [tripItems, setTripItems] = useState([]);
@@ -23,7 +23,12 @@ function TripDetailsPage() {
     try {
       setLoading(true);
       setPageError("");
-  
+      try {
+        const profileRes = await api.get("/users/profile");
+        setProfileInfo(profileRes.data);
+      } catch {
+        setProfileInfo(null);
+      }
       const [tripRes, suitcaseRes, itemsRes, resultsRes] =
         await Promise.allSettled([
           api.get(`/trips/${id}`),
@@ -72,8 +77,12 @@ function TripDetailsPage() {
       setActionMessage("");
 
       const response = await api.post(`/trips/${id}/generate-suggestions`, {});
-      setActionMessage(response.data.message || "Suggestions generated successfully.");
+      const generatedMessage =
+        response.data?.profileUsed
+          ? `Suggestions generated successfully using your size ${response.data.profileUsed.defaultSize} and travel style ${response.data.profileUsed.travelStyle}.`
+          : response.data.message || "Suggestions generated successfully.";
 
+      setActionMessage(generatedMessage);
       await loadTripData();
     } catch (error) {
       console.error("Generate suggestions error:", error);
@@ -205,6 +214,56 @@ function TripDetailsPage() {
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: "20px" }}>
+        <div className="trip-actions-header">
+          <div>
+            <h2 className="trip-details-card-title">Personalization</h2>
+            <p className="info-text">
+              Your saved preferences help shape suggestions and planning.
+            </p>
+          </div>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate("/profile")}
+          >
+            Edit Profile
+          </button>
+        </div>
+
+        <div className="trip-details-status-grid">
+          <div className="card trip-status-card">
+            <div className="trip-status-card-label">Default Size</div>
+            <div className="trip-status-card-value">
+              {profileInfo?.profile?.defaultSize || "Not set"}
+            </div>
+            <div className="trip-status-card-subtext">
+              Used for suggested clothing sizes when available.
+            </div>
+          </div>
+
+          <div className="card trip-status-card">
+            <div className="trip-status-card-label">Travel Style</div>
+            <div className="trip-status-card-value">
+              {profileInfo?.profile?.travelStyle || "casual"}
+            </div>
+            <div className="trip-status-card-subtext">
+              Suggestions adapt to your preferred travel style.
+            </div>
+          </div>
+
+          <div className="card trip-status-card">
+            <div className="trip-status-card-label">Preferred Suitcase</div>
+            <div className="trip-status-card-value">
+              {profileInfo?.profile?.preferredSuitcaseName || "Not set"}
+            </div>
+            <div className="trip-status-card-subtext">
+              Saved as a personal planning preference.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="card" style={{ marginTop: "20px" }}>
         <div className="trip-actions-header">
           <div>
@@ -299,6 +358,9 @@ function TripDetailsPage() {
           ) : (
             <p className="info-text">
               No suitcase has been added to this trip yet. Add a suitcase to continue.
+              {profileInfo?.profile?.preferredSuitcaseName
+                ? ` Your saved preference is ${profileInfo.profile.preferredSuitcaseName}.`
+                : ""}
             </p>
           )}
         </div>

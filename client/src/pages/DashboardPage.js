@@ -66,6 +66,16 @@ function DashboardPage() {
             View Trips
           </button>
         </div>
+
+        <div className="card dashboard-card">
+          <h3>Profile & Preferences</h3>
+          <p>
+            Update your size, travel style, and planning preferences for smarter suggestions.
+          </p>
+          <button className="secondary-btn" onClick={() => navigate("/profile")}>
+            Open Profile
+          </button>
+        </div>
       </div>
     </div>
   );

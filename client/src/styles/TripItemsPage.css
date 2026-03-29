@@ -129,6 +129,30 @@
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
 }
+.trip-items-personalization-box {
+  margin-bottom: 20px;
+}
+
+.trip-items-personalization-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.trip-items-personalization-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.trip-items-personalization-label {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
 
 @media (max-width: 768px) {
   .trip-items-grid,
@@ -138,5 +162,8 @@
 
   .trip-item-edit-actions {
     flex-direction: column;
+  }
+  .trip-items-personalization-grid {
+    grid-template-columns: 1fr;
   }
 }

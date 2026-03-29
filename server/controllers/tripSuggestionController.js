@@ -52,15 +52,33 @@ const generateSuggestions = async (req, res) => {
 
     if (existingItems.length > 0) {
       return res.status(409).json({
-        message: "This trip already has items. Clear them first before generating suggestions.",
+        message:
+          "This trip already has items. Clear them first before generating suggestions.",
       });
     }
+
+    const profileRows = await queryAsync(
+      `
+      SELECT
+        default_size,
+        travel_style,
+        preferred_suitcase_name
+      FROM user_profiles
+      WHERE user_id = ?
+      LIMIT 1
+      `,
+      [userId]
+    );
+
+    const userProfile = profileRows[0] || null;
 
     const suggestedRules = buildSuggestionRules({
       durationDays: trip.duration_days,
       travelType: trip.travel_type,
       weatherType: trip.weather_type,
       travelerCount: trip.traveler_count,
+      defaultSize: userProfile?.default_size || "M",
+      travelStyle: userProfile?.travel_style || "casual",
     });
 
     if (!suggestedRules.length) {
@@ -110,7 +128,8 @@ const generateSuggestions = async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      const sizeCode = baseItem.size_mode === "alpha" ? "M" : null;
+      const sizeCode =
+        baseItem.size_mode === "alpha" ? suggested.sizeCode || "M" : null;
 
       const result = await queryAsync(insertQuery, [
         tripId,
@@ -150,6 +169,11 @@ const generateSuggestions = async (req, res) => {
         travelType: trip.travel_type,
         weatherType: trip.weather_type,
         travelerCount: trip.traveler_count,
+      },
+      profileUsed: {
+        defaultSize: userProfile?.default_size || "M",
+        travelStyle: userProfile?.travel_style || "casual",
+        preferredSuitcaseName: userProfile?.preferred_suitcase_name || "",
       },
       suggestions: insertedItems,
     });

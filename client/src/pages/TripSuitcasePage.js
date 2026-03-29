@@ -6,7 +6,7 @@ import "../styles/TripSuitcasePage.css";
 function TripSuitcasePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [profileInfo, setProfileInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [existingSuitcase, setExistingSuitcase] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -27,32 +27,48 @@ function TripSuitcasePage() {
   useEffect(() => {
     const loadSuitcase = async () => {
       try {
-        const response = await api.get(`/trips/${id}/suitcase`);
-        const data = response.data;
-
-        setExistingSuitcase(data);
-        setForm({
-          suitcaseType: data.suitcase_type || "preset",
-          name: data.name || "",
-          volumeCm3: data.volume_cm3 || "",
-          maxWeightKg: data.max_weight_kg || "",
-          lengthCm: data.length_cm || "",
-          widthCm: data.width_cm || "",
-          heightCm: data.height_cm || "",
-          isCustom: !!data.is_custom,
-        });
-      } catch (error) {
-        if (error?.response?.status !== 404) {
-          console.error("Load suitcase error:", error);
-          setErrorMessage(
-            error?.response?.data?.message || "Failed to load suitcase."
-          );
+        const profileRes = await api.get("/users/profile");
+        setProfileInfo(profileRes.data || null);
+  
+        try {
+          const response = await api.get(`/trips/${id}/suitcase`);
+          const data = response.data;
+  
+          setExistingSuitcase(data);
+          setForm({
+            suitcaseType: data.suitcase_type || "preset",
+            name: data.name || "",
+            volumeCm3: data.volume_cm3 || "",
+            maxWeightKg: data.max_weight_kg || "",
+            lengthCm: data.length_cm || "",
+            widthCm: data.width_cm || "",
+            heightCm: data.height_cm || "",
+            isCustom: !!data.is_custom,
+          });
+        } catch (error) {
+          if (error?.response?.status === 404) {
+            const preferredName =
+              profileRes.data?.profile?.preferredSuitcaseName || "";
+  
+            setExistingSuitcase(null);
+            setForm((prev) => ({
+              ...prev,
+              name: preferredName || "",
+            }));
+          } else {
+            throw error;
+          }
         }
+      } catch (error) {
+        console.error("Load suitcase/profile error:", error);
+        setErrorMessage(
+          error?.response?.data?.message || "Failed to load suitcase."
+        );
       } finally {
         setLoading(false);
       }
     };
-
+  
     loadSuitcase();
   }, [id]);
 
@@ -172,7 +188,15 @@ function TripSuitcasePage() {
           </div>
         </div>
       </div>
-
+      {profileInfo?.profile?.preferredSuitcaseName && (
+        <div className="card trip-suitcase-hint-box">
+          <h3 className="trip-items-card-title">Saved Preference</h3>
+          <p className="info-text">
+            Your preferred suitcase is{" "}
+            <strong>{profileInfo.profile.preferredSuitcaseName}</strong>.
+          </p>
+        </div>
+      )}
       <div className="card trip-suitcase-card">
         {errorMessage && (
           <div className="trip-suitcase-error">{errorMessage}</div>

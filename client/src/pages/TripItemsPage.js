@@ -6,7 +6,7 @@ import "../styles/TripItemsPage.css";
 function TripItemsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-
+  const [profileInfo, setProfileInfo] = useState(null);
   const [tripItems, setTripItems] = useState([]);
   const [baseItems, setBaseItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,11 +54,12 @@ function TripItemsPage() {
       setLoading(true);
       setPageError("");
 
-      const [tripItemsRes, baseItemsRes] = await Promise.all([
+      const [tripItemsRes, baseItemsRes, profileRes] = await Promise.all([
         api.get(`/trips/${id}/items`),
         api.get("/items"),
+        api.get("/users/profile"),
       ]);
-
+      setProfileInfo(profileRes.data || null);
       setTripItems(tripItemsRes.data || []);
       setBaseItems(baseItemsRes.data || []);
     } catch (error) {
@@ -320,6 +321,29 @@ function TripItemsPage() {
           <div className="trip-form-hero-box">
             <span className="trip-form-hero-label">Available actions</span>
             <strong className="trip-form-hero-value">Add, edit and remove items</strong>
+          </div>
+        </div>
+      </div>
+      <div className="card trip-items-personalization-box">
+        <h3 className="trip-items-card-title">Your Preferences</h3>
+        <p className="info-text">
+          Suggestions can use your saved size and travel style preferences.
+        </p>
+
+        <div className="trip-items-personalization-grid">
+          <div className="trip-items-personalization-item">
+            <span className="trip-items-personalization-label">Default Size</span>
+            <strong>{profileInfo?.profile?.defaultSize || "Not set"}</strong>
+          </div>
+
+          <div className="trip-items-personalization-item">
+            <span className="trip-items-personalization-label">Travel Style</span>
+            <strong>{profileInfo?.profile?.travelStyle || "casual"}</strong>
+          </div>
+
+          <div className="trip-items-personalization-item">
+            <span className="trip-items-personalization-label">Preferred Suitcase</span>
+            <strong>{profileInfo?.profile?.preferredSuitcaseName || "Not set"}</strong>
           </div>
         </div>
       </div>

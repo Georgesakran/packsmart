@@ -55,6 +55,11 @@
   transform: scale(1.2);
 }
 
+.trip-suitcase-hint-box {
+  max-width: 960px;
+  margin-bottom: 20px;
+}
+
 @media (max-width: 768px) {
   .trip-suitcase-grid {
     grid-template-columns: 1fr;
