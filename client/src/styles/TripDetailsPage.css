@@ -189,6 +189,9 @@
 .trip-empty-state {
   padding: 10px 0;
 }
+.trip-suggestion-meta-box {
+  margin-bottom: 20px;
+}
 
 @media (max-width: 900px) {
   .trip-hero-meta,
