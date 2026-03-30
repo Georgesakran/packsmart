@@ -169,8 +169,137 @@ const getPackingPriority = (item) => {
   
     return [...new Set(advice)];
   };
+
+  const getMainConstraint = (totals, suitcase) => {
+    const volumeOver = totals.totalVolumeCm3 - Number(suitcase.volume_cm3);
+    const weightOverG = totals.totalWeightG - Number(suitcase.max_weight_kg) * 1000;
   
+    if (volumeOver > 0 && weightOverG > 0) return "both";
+    if (volumeOver > 0) return "volume";
+    if (weightOverG > 0) return "weight";
+    return "none";
+  };
+  
+  const buildAdjustmentSuggestions = (items, totals, suitcase) => {
+    const mainConstraint = getMainConstraint(totals, suitcase);
+  
+    const sortedByVolume = [...items].sort((a, b) => b.finalVolumeCm3 - a.finalVolumeCm3);
+    const sortedByWeight = [...items].sort((a, b) => b.finalWeightG - a.finalWeightG);
+  
+    const adjustments = [];
+    const warnings = [];
+    const optimizationTips = [];
+  
+    if (mainConstraint === "volume" || mainConstraint === "both") {
+      const bulky = sortedByVolume.filter(
+        (item) =>
+          item.finalVolumeCm3 >= 4000 ||
+          item.category === "outerwear" ||
+          item.category === "shoes"
+      );
+  
+      if (bulky[0]) {
+        adjustments.push(
+          `Remove or reduce ${bulky[0].name} first to lower suitcase volume.`
+        );
+      }
+  
+      if (bulky[1]) {
+        adjustments.push(
+          `Consider reducing ${bulky[1].name} if you still need more space.`
+        );
+      }
+  
+      const foldableLarge = sortedByVolume.find(
+        (item) =>
+          item.packBehavior === "foldable" &&
+          item.quantity > 1 &&
+          item.finalVolumeCm3 >= 2500
+      );
+  
+      if (foldableLarge) {
+        adjustments.push(
+          `Reduce the quantity of ${foldableLarge.name} to free up more packing space.`
+        );
+      }
+  
+      warnings.push("Your main packing issue is suitcase volume.");
+    }
+  
+    if (mainConstraint === "weight" || mainConstraint === "both") {
+      const heavy = sortedByWeight.filter(
+        (item) =>
+          item.finalWeightG >= 800 ||
+          item.category === "shoes" ||
+          item.category === "outerwear"
+      );
+  
+      if (heavy[0]) {
+        adjustments.push(
+          `Remove or reduce ${heavy[0].name} first to lower total weight.`
+        );
+      }
+  
+      if (heavy[1]) {
+        adjustments.push(
+          `Check whether ${heavy[1].name} is necessary for this trip.`
+        );
+      }
+  
+      const heavyCustom = sortedByWeight.find(
+        (item) => item.source === "custom" && item.finalWeightG >= 1000
+      );
+  
+      if (heavyCustom) {
+        adjustments.push(
+          `Review the custom item ${heavyCustom.name}, as it adds significant weight.`
+        );
+      }
+  
+      warnings.push("Your main packing issue is total weight.");
+    }
+  
+    if (totals.usedCapacityPercent >= 85 && totals.usedCapacityPercent <= 100) {
+      optimizationTips.push(
+        "Your suitcase is close to full capacity. Keep a little free space for easier closing."
+      );
+    }
+  
+    if (totals.weightKg >= Number(suitcase.max_weight_kg) * 0.85) {
+      optimizationTips.push(
+        "Your packed weight is close to the suitcase limit. Avoid adding more heavy items."
+      );
+    }
+  
+    const repeatedItems = items.filter(
+      (item) =>
+        item.quantity >= 3 &&
+        (item.category === "tops" || item.category === "bottoms")
+    );
+  
+    if (repeatedItems[0]) {
+      optimizationTips.push(
+        `You may be able to reduce the quantity of ${repeatedItems[0].name} without affecting the trip too much.`
+      );
+    }
+  
+    const shoes = items.find((item) => item.category === "shoes");
+    if (shoes && shoes.quantity >= 1) {
+      optimizationTips.push(
+        "Shoes take a large amount of space. Pack only the pairs you really need."
+      );
+    }
+  
+    return {
+      mainConstraint,
+      warnings: [...new Set(warnings)],
+      adjustments: [...new Set(adjustments)].slice(0, 5),
+      optimizationTips: [...new Set(optimizationTips)].slice(0, 5),
+    };
+  };
+
   const calculateTripResult = ({ suitcase, tripItems, sizeMultipliers }) => {
+
     const sizeMap = {};
     sizeMultipliers.forEach((size) => {
       sizeMap[size.size_code] = Number(size.multiplier);
@@ -271,6 +400,12 @@ const getPackingPriority = (item) => {
     });
   
     const advice = getSmartAdvice(detailedItems, totals, suitcase);
+
+    const smartAdjustments = buildAdjustmentSuggestions(
+      detailedItems,
+      totals,
+      suitcase
+    );
   
     return {
       totals,
@@ -278,6 +413,7 @@ const getPackingPriority = (item) => {
       packingOrder,
       suitcaseLayout,
       advice,
+      smartAdjustments,
     };
   };
   

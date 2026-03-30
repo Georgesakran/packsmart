@@ -79,6 +79,12 @@ function TripResultsPage() {
     packingOrder = [],
     suitcaseLayout = {},
     advice = [],
+    smartAdjustments = {
+      mainConstraint: "none",
+      warnings: [],
+      adjustments: [],
+      optimizationTips: [],
+    },
   } = resultData;
 
   return (
@@ -178,7 +184,71 @@ function TripResultsPage() {
 
       <div className="card" style={{ marginTop: "20px" }}>
         <h2 className="trip-results-card-title">Summary</h2>
+        <div className="card" style={{ marginTop: "20px" }}>
+          <div className="trip-results-smart-header">
+            <div>
+              <h2 className="trip-results-card-title">Smart Adjustments</h2>
+              <p className="info-text">
+                Practical guidance based on your current packing result.
+              </p>
+            </div>
 
+            <div
+              className={`trip-results-constraint-badge ${
+                smartAdjustments.mainConstraint === "none"
+                  ? "constraint-none"
+                  : smartAdjustments.mainConstraint === "volume"
+                  ? "constraint-volume"
+                  : smartAdjustments.mainConstraint === "weight"
+                  ? "constraint-weight"
+                  : "constraint-both"
+              }`}
+            >
+              Main issue: {smartAdjustments.mainConstraint}
+            </div>
+          </div>
+
+          <div className="trip-results-smart-grid">
+            <div className="trip-results-smart-box">
+              <h3>Warnings</h3>
+              {smartAdjustments.warnings?.length === 0 ? (
+                <p className="info-text">No major warnings for this result.</p>
+              ) : (
+                <ul className="trip-results-smart-list">
+                  {smartAdjustments.warnings.map((item, index) => (
+                    <li key={`warning-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="trip-results-smart-box">
+              <h3>Recommended Adjustments</h3>
+              {smartAdjustments.adjustments?.length === 0 ? (
+                <p className="info-text">No major changes are needed right now.</p>
+              ) : (
+                <ul className="trip-results-smart-list">
+                  {smartAdjustments.adjustments.map((item, index) => (
+                    <li key={`adjustment-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="trip-results-smart-box trip-results-smart-box-full">
+              <h3>Optimization Tips</h3>
+              {smartAdjustments.optimizationTips?.length === 0 ? (
+                <p className="info-text">No extra optimization tips available.</p>
+              ) : (
+                <ul className="trip-results-smart-list">
+                  {smartAdjustments.optimizationTips.map((item, index) => (
+                    <li key={`tip-${index}`}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="trip-results-summary-grid">
           <div className="trip-results-stat">
             <div className="trip-results-stat-label">Total Volume</div>

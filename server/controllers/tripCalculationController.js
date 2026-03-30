@@ -104,9 +104,10 @@ const calculateTrip = async (req, res) => {
               overall_fits,
               packing_order_json,
               layout_json,
-              advice_json
+              advice_json,
+              smart_adjustments_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
               total_volume_cm3 = VALUES(total_volume_cm3),
               total_weight_g = VALUES(total_weight_g),
@@ -119,7 +120,8 @@ const calculateTrip = async (req, res) => {
               packing_order_json = VALUES(packing_order_json),
               layout_json = VALUES(layout_json),
               advice_json = VALUES(advice_json),
-              updated_at = CURRENT_TIMESTAMP
+              updated_at = CURRENT_TIMESTAMP,
+              smart_adjustments_json = VALUES(smart_adjustments_json)
           `;
 
           db.query(
@@ -137,6 +139,7 @@ const calculateTrip = async (req, res) => {
               JSON.stringify(calculated.packingOrder),
               JSON.stringify(calculated.suitcaseLayout),
               JSON.stringify(calculated.advice),
+              JSON.stringify(calculated.smartAdjustments),
             ],
             (saveErr) => {
               if (saveErr) {
@@ -162,6 +165,7 @@ const calculateTrip = async (req, res) => {
                 packingOrder: calculated.packingOrder,
                 suitcaseLayout: calculated.suitcaseLayout,
                 advice: calculated.advice,
+                smartAdjustments: calculated.smartAdjustments,
               });
             }
           );
@@ -178,6 +182,7 @@ const getTripResults = async (req, res) => {
   try {
     const userId = req.user.id;
     const tripId = req.params.tripId;
+
 
     const trip = await getOwnedTrip(tripId, userId);
 
@@ -231,10 +236,16 @@ const getTripResults = async (req, res) => {
             return fallback;
           }
         };
-        
+ 
         const packingOrder = parseMaybeJson(result.packing_order_json, []);
         const suitcaseLayout = parseMaybeJson(result.layout_json, {});
         const advice = parseMaybeJson(result.advice_json, []);
+        const smartAdjustments = parseMaybeJson(result.smart_adjustments_json, {
+          mainConstraint: "none",
+          warnings: [],
+          adjustments: [],
+          optimizationTips: [],
+        });
 
 
         return res.status(200).json({
@@ -265,6 +276,7 @@ const getTripResults = async (req, res) => {
           suitcaseLayout,
           advice,
           calculatedAt: result.calculated_at,
+          smartAdjustments,
         });
       });
     });
