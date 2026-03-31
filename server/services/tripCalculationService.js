@@ -170,9 +170,9 @@ const getPackingPriority = (item) => {
     return [...new Set(advice)];
   };
 
-  const getMainConstraint = (totals, suitcase) => {
-    const volumeOver = totals.totalVolumeCm3 - Number(suitcase.volume_cm3);
-    const weightOverG = totals.totalWeightG - Number(suitcase.max_weight_kg) * 1000;
+  const getMainConstraint = (totals) => {
+    const volumeOver = totals.totalVolumeCm3 - totals.totalAvailableVolumeCm3;
+    const weightOverG = totals.totalWeightG - totals.totalAllowedWeightG;
   
     if (volumeOver > 0 && weightOverG > 0) return "both";
     if (volumeOver > 0) return "volume";
@@ -180,8 +180,8 @@ const getPackingPriority = (item) => {
     return "none";
   };
   
-  const buildAdjustmentSuggestions = (items, totals, suitcase) => {
-    const mainConstraint = getMainConstraint(totals, suitcase);
+  const buildAdjustmentSuggestions = (items, totals) => {
+    const mainConstraint = getMainConstraint(totals);
   
     const sortedByVolume = [...items].sort((a, b) => b.finalVolumeCm3 - a.finalVolumeCm3);
     const sortedByWeight = [...items].sort((a, b) => b.finalWeightG - a.finalWeightG);
@@ -298,7 +298,19 @@ const getPackingPriority = (item) => {
     };
   };
 
-  const calculateTripResult = ({ suitcase, tripItems, sizeMultipliers }) => {
+  const calculateTripResult = ({ suitcases, tripItems, sizeMultipliers }) => {
+    const totalAvailableVolumeCm3 = suitcases.reduce(
+      (sum, bag) => sum + Number(bag.volume_cm3 || 0),
+      0
+    );
+    
+    const totalAvailableWeightG = suitcases.reduce(
+      (sum, bag) => sum + Number(bag.max_weight_kg || 0) * 1000,
+      0
+    );
+    
+    const primarySuitcase =
+      suitcases.find((bag) => bag.is_primary) || suitcases[0];
 
     const sizeMap = {};
     sizeMultipliers.forEach((size) => {
@@ -337,27 +349,27 @@ const getPackingPriority = (item) => {
     });
   
     const weightKg = Number((totalWeightG / 1000).toFixed(2));
-    const usedCapacityPercent = Number(
-      ((totalVolumeCm3 / Number(suitcase.volume_cm3)) * 100).toFixed(2)
-    );
-    const remainingVolumeCm3 = Math.max(
-      0,
-      Number(suitcase.volume_cm3) - totalVolumeCm3
-    );
-  
-    const volumeFits = totalVolumeCm3 <= Number(suitcase.volume_cm3);
-    const weightFits = weightKg <= Number(suitcase.max_weight_kg);
+    const usedCapacityPercent =
+    totalAvailableVolumeCm3 > 0
+      ? Math.round((totalVolumeCm3 / totalAvailableVolumeCm3) * 100)
+      : 0;
+      
+    const remainingVolumeCm3 = totalAvailableVolumeCm3 - totalVolumeCm3;
+    const volumeFits = totalVolumeCm3 <= totalAvailableVolumeCm3;
+    const weightFits = totalWeightG <= totalAvailableWeightG;
     const overallFits = volumeFits && weightFits;
   
     const totals = {
-      totalVolumeCm3: Math.round(totalVolumeCm3),
-      totalWeightG: Math.round(totalWeightG),
+      totalVolumeCm3,
+      totalWeightG,
       weightKg,
       usedCapacityPercent,
-      remainingVolumeCm3: Math.round(remainingVolumeCm3),
+      remainingVolumeCm3,
       volumeFits,
       weightFits,
       overallFits,
+      totalAvailableVolumeCm3,
+      totalAllowedWeightG,
     };
   
     const sortedPackingItems = [...detailedItems].sort((a, b) => {
@@ -403,8 +415,7 @@ const getPackingPriority = (item) => {
 
     const smartAdjustments = buildAdjustmentSuggestions(
       detailedItems,
-      totals,
-      suitcase
+      totals
     );
   
     return {
@@ -414,6 +425,14 @@ const getPackingPriority = (item) => {
       suitcaseLayout,
       advice,
       smartAdjustments,
+      suitcasesSummary: suitcases.map((bag) => ({
+        id: bag.id,
+        name: bag.name,
+        bagRole: bag.bag_role,
+        isPrimary: !!bag.is_primary,
+        volumeCm3: Number(bag.volume_cm3),
+        maxWeightKg: Number(bag.max_weight_kg),
+      })),
     };
   };
   

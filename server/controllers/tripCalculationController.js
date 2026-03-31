@@ -64,8 +64,8 @@ const calculateTrip = async (req, res) => {
           message: "This trip has no suitcase assigned yet",
         });
       }
-
-      const suitcase = suitcaseResults[0];
+      
+      const suitcases = suitcaseResults;
 
       db.query(tripItemsQuery, [tripId], (itemsErr, tripItemsResults) => {
         if (itemsErr) {
@@ -86,7 +86,7 @@ const calculateTrip = async (req, res) => {
           }
 
           const calculated = calculateTripResult({
-            suitcase,
+            suitcases,
             tripItems: tripItemsResults,
             sizeMultipliers: sizeResults,
           });
@@ -154,12 +154,15 @@ const calculateTrip = async (req, res) => {
                   tripName: trip.trip_name,
                   destination: trip.destination,
                 },
-                suitcase: {
-                  id: suitcase.id,
-                  name: suitcase.name,
-                  volumeCm3: Number(suitcase.volume_cm3),
-                  maxWeightKg: Number(suitcase.max_weight_kg),
-                },
+                suitcases: suitcases.map((bag) => ({
+                  id: bag.id,
+                  name: bag.name,
+                  bagRole: bag.bag_role,
+                  isPrimary: !!bag.is_primary,
+                  volumeCm3: Number(bag.volume_cm3),
+                  maxWeightKg: Number(bag.max_weight_kg),
+                })),
+
                 totals: calculated.totals,
                 items: calculated.items,
                 packingOrder: calculated.packingOrder,
@@ -192,11 +195,11 @@ const getTripResults = async (req, res) => {
       });
     }
 
-    const suitcaseQuery = `
+    const suitcasesQuery = `
       SELECT *
       FROM trip_suitcases
       WHERE trip_id = ?
-      LIMIT 1
+      ORDER BY is_primary DESC, created_at ASC
     `;
 
     const resultsQuery = `
@@ -206,7 +209,7 @@ const getTripResults = async (req, res) => {
       LIMIT 1
     `;
 
-    db.query(suitcaseQuery, [tripId], (suitcaseErr, suitcaseResults) => {
+    db.query(suitcasesQuery, [tripId], (suitcaseErr, suitcaseResults) => {
       if (suitcaseErr) {
         console.error("Get trip results suitcase error:", suitcaseErr.message);
         return res.status(500).json({ message: "Server error" });
