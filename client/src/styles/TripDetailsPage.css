@@ -201,6 +201,22 @@
   cursor: pointer;
   font-weight: 700;
 }
+.trip-suitcase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-suitcase-chip-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.trip-suitcase-chip-card p {
+  margin: 6px 0;
+}
 @media (max-width: 900px) {
   .trip-hero-meta,
   .trip-details-status-grid,

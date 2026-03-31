@@ -8,7 +8,7 @@ function TripDetailsPage() {
   const navigate = useNavigate();
   const [profileInfo, setProfileInfo] = useState(null);
   const [trip, setTrip] = useState(null);
-  const [suitcase, setSuitcase] = useState(null);
+  const [suitcases, setSuitcases] = useState([]);
   const [tripItems, setTripItems] = useState([]);
   const [results, setResults] = useState(null);
   const [suggestionMeta, setSuggestionMeta] = useState(null);
@@ -33,7 +33,7 @@ function TripDetailsPage() {
       const [tripRes, suitcaseRes, itemsRes, resultsRes] =
         await Promise.allSettled([
           api.get(`/trips/${id}`),
-          api.get(`/trips/${id}/suitcase`),
+          api.get(`/trips/${id}/suitcases`),
           api.get(`/trips/${id}/items`),
           api.get(`/trips/${id}/results`),
         ]);
@@ -46,8 +46,10 @@ function TripDetailsPage() {
       }
   
       // Optional data (safe fallback)
-      setSuitcase(
-        suitcaseRes.status === "fulfilled" ? suitcaseRes.value.data : null
+      setSuitcases(
+        suitcaseRes.status === "fulfilled"
+          ? suitcaseRes.value.data || []
+          : []
       );
   
       setTripItems(
@@ -128,7 +130,7 @@ function TripDetailsPage() {
     return trip.status;
   }, [trip]);
 
-  const suitcaseStatus = suitcase ? "Added" : "Missing";
+  const suitcaseStatus = suitcases.length > 0 ? `${suitcases.length} bags` : "Missing";
   const itemsStatus = tripItems.length > 0 ? `${tripItems.length} items` : "No items";
   const resultsStatus = results ? "Calculated" : "Not calculated";
 
@@ -271,7 +273,9 @@ function TripDetailsPage() {
           <div className="trip-status-card-label">Suitcase</div>
           <div className="trip-status-card-value">{suitcaseStatus}</div>
           <div className="trip-status-card-subtext">
-            {suitcase ? suitcase.name : "No suitcase assigned yet"}
+          {suitcases.length > 0
+            ? `${suitcases.filter((bag) => bag.is_primary).length > 0 ? "Primary selected" : "No primary selected"}`
+            : "No suitcase assigned yet"}          
           </div>
         </div>
 
@@ -373,7 +377,7 @@ function TripDetailsPage() {
             className="secondary-btn"
             onClick={() => navigate(`/trips/${id}/suitcase`)}
           >
-            {suitcase ? "Edit Suitcase" : "Add Suitcase"}
+            {suitcases.length > 0 ? "Manage Suitcases" : "Add Suitcases"}
           </button>
 
           <button
@@ -433,27 +437,44 @@ function TripDetailsPage() {
         </div>
 
         <div className="card trip-details-card">
-          <h2 className="trip-details-card-title">Suitcase</h2>
-          {suitcase ? (
-            <>
-              <p><strong>Name:</strong> {suitcase.name}</p>
-              <p><strong>Type:</strong> {suitcase.suitcase_type}</p>
-              <p><strong>Volume:</strong> {suitcase.volume_cm3} cm³</p>
-              <p><strong>Max Weight:</strong> {suitcase.max_weight_kg} kg</p>
-              <p>
-                <strong>Dimensions:</strong>{" "}
-                {suitcase.length_cm && suitcase.width_cm && suitcase.height_cm
-                  ? `${suitcase.length_cm} × ${suitcase.width_cm} × ${suitcase.height_cm} cm`
-                  : "Not set"}
+          <div className="trip-items-header">
+            <div>
+              <h2 className="trip-details-card-title">Suitcases</h2>
+              <p className="info-text">
+                Manage all bags linked to this trip.
               </p>
-            </>
-          ) : (
+            </div>
+
+            <button
+              className="secondary-btn"
+              onClick={() => navigate(`/trips/${id}/suitcase`)}
+            >
+              {suitcases.length > 0 ? "Manage Suitcases" : "Add Suitcases"}
+            </button>
+          </div>
+
+          {suitcases.length === 0 ? (
             <p className="info-text">
-              No suitcase has been added to this trip yet. Add a suitcase to continue.
+              No suitcase has been added to this trip yet.
               {profileInfo?.profile?.preferredSuitcaseName
                 ? ` Your saved preference is ${profileInfo.profile.preferredSuitcaseName}.`
                 : ""}
             </p>
+          ) : (
+            <div className="trip-suitcase-list">
+              {suitcases.map((bag) => (
+                <div key={bag.id} className="trip-suitcase-chip-card">
+                  <p><strong>Name:</strong> {bag.name}</p>
+                  <p><strong>Role:</strong> {bag.bag_role}</p>
+                  <p><strong>Type:</strong> {bag.suitcase_type}</p>
+                  <p><strong>Volume:</strong> {bag.volume_cm3} cm³</p>
+                  <p><strong>Max Weight:</strong> {bag.max_weight_kg} kg</p>
+                  <p>
+                    <strong>Primary:</strong> {bag.is_primary ? "Yes" : "No"}
+                  </p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
