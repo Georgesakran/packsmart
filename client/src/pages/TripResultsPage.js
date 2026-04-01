@@ -74,7 +74,7 @@ function TripResultsPage() {
 
   const {
     trip,
-    suitcase,
+    suitcases = [],
     totals,
     packingOrder = [],
     suitcaseLayout = {},
@@ -126,16 +126,18 @@ function TripResultsPage() {
           </div>
 
           <div className="trip-results-hero-meta-item">
-            <span className="trip-results-hero-meta-label">Suitcase</span>
+            <span className="trip-results-hero-meta-label">Bags</span>
             <span className="trip-results-hero-meta-value">
-              {suitcase?.name || "No suitcase"}
+              {suitcases.length || 0}
             </span>
           </div>
 
           <div className="trip-results-hero-meta-item">
-            <span className="trip-results-hero-meta-label">Max Weight</span>
+            <span className="trip-results-hero-meta-label">Combined Weight Limit</span>
             <span className="trip-results-hero-meta-value">
-              {suitcase?.maxWeightKg ?? "N/A"} kg
+              {totals?.totalAllowedWeightG
+                ? `${(totals.totalAllowedWeightG / 1000).toFixed(1)} kg`
+                : "N/A"}
             </span>
           </div>
         </div>
@@ -180,6 +182,40 @@ function TripResultsPage() {
             Edit Trip
           </button>
         </div>
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Trip Bags</h2>
+            <p className="info-text">
+              This result is calculated using all bags linked to this trip.
+            </p>
+          </div>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/suitcase`)}
+          >
+            Manage Suitcases
+          </button>
+        </div>
+
+        {suitcases.length === 0 ? (
+          <p className="info-text">No bags found for this trip.</p>
+        ) : (
+          <div className="trip-results-bags-grid">
+            {suitcases.map((bag) => (
+              <div key={bag.id} className="trip-results-bag-card">
+                <h3 className="trip-results-bag-title">{bag.name}</h3>
+                <p><strong>Role:</strong> {bag.bagRole}</p>
+                <p><strong>Primary:</strong> {bag.isPrimary ? "Yes" : "No"}</p>
+                <p><strong>Volume:</strong> {bag.volumeCm3} cm³</p>
+                <p><strong>Max Weight:</strong> {bag.maxWeightKg} kg</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ marginTop: "20px" }}>
@@ -277,6 +313,22 @@ function TripResultsPage() {
               {totals?.remainingVolumeCm3} cm³
             </div>
           </div>
+
+          <div className="trip-results-stat">
+            <div className="trip-results-stat-label">Combined Bag Volume</div>
+            <div className="trip-results-stat-value">
+              {totals?.totalAvailableVolumeCm3} cm³
+            </div>
+          </div>
+
+          <div className="trip-results-stat">
+            <div className="trip-results-stat-label">Combined Weight Limit</div>
+            <div className="trip-results-stat-value">
+              {totals?.totalAllowedWeightG
+                ? `${(totals.totalAllowedWeightG / 1000).toFixed(1)} kg`
+                : "N/A"}
+            </div>
+          </div>
         </div>
 
         <div
@@ -287,8 +339,8 @@ function TripResultsPage() {
           }
         >
           {totals?.overallFits
-            ? "This packing setup should fit your suitcase."
-            : "This setup may exceed your suitcase capacity or weight limit."}
+            ? "This packing setup should fit within your combined trip bags."
+            : "This setup may exceed your combined bag capacity or weight limit."}
         </div>
 
         <div className="trip-results-checks">

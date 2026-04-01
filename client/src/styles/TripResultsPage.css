@@ -350,15 +350,28 @@
   line-height: 1.6;
 }
 
-@media (max-width: 900px) {
-  .trip-results-smart-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .trip-results-smart-box-full {
-    grid-column: auto;
-  }
+.trip-results-bags-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
+
+.trip-results-bag-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.trip-results-bag-title {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.trip-results-bag-card p {
+  margin: 6px 0;
+}
+
 
 @media (max-width: 900px) {
   .trip-results-hero-meta,
