@@ -105,7 +105,8 @@ const calculateTrip = async (req, res) => {
               packing_order_json,
               layout_json,
               advice_json,
-              smart_adjustments_json
+              smart_adjustments_json,
+              bag_distribution_json
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
@@ -121,7 +122,8 @@ const calculateTrip = async (req, res) => {
               layout_json = VALUES(layout_json),
               advice_json = VALUES(advice_json),
               updated_at = CURRENT_TIMESTAMP,
-              smart_adjustments_json = VALUES(smart_adjustments_json)
+              smart_adjustments_json = VALUES(smart_adjustments_json),
+              bag_distribution_json = VALUES(bag_distribution_json)
           `;
 
           db.query(
@@ -169,6 +171,7 @@ const calculateTrip = async (req, res) => {
                 suitcaseLayout: calculated.suitcaseLayout,
                 advice: calculated.advice,
                 smartAdjustments: calculated.smartAdjustments,
+                bagDistribution: calculated.bagDistribution,
               });
             }
           );
@@ -249,6 +252,7 @@ const getTripResults = async (req, res) => {
           adjustments: [],
           optimizationTips: [],
         });
+        const bagDistribution = parseMaybeJson(result.bag_distribution_json, []);
 
 
         return res.status(200).json({
@@ -280,6 +284,7 @@ const getTripResults = async (req, res) => {
           advice,
           calculatedAt: result.calculated_at,
           smartAdjustments,
+          bagDistribution,
         });
       });
     });

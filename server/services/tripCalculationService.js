@@ -298,6 +298,124 @@ const getPackingPriority = (item) => {
     };
   };
 
+  const normalizeBagRole = (role) => {
+    if (!role) return "main";
+    if (role === "carry_on") return "carry_on";
+    if (role === "personal") return "personal";
+    if (role === "extra") return "extra";
+    return "main";
+  };
+  
+  const chooseTargetBagRole = (item) => {
+    const name = (item.name || "").toLowerCase();
+    const category = (item.category || "").toLowerCase();
+    const behavior = (item.packBehavior || "").toLowerCase();
+  
+    if (
+      category === "tech" ||
+      name.includes("charger") ||
+      name.includes("power bank") ||
+      name.includes("headphones")
+    ) {
+      return "personal";
+    }
+  
+    if (
+      category === "accessories" ||
+      name.includes("toiletry") ||
+      name.includes("passport") ||
+      name.includes("documents")
+    ) {
+      return "personal";
+    }
+  
+    if (
+      category === "shoes" ||
+      category === "outerwear" ||
+      behavior === "rigid"
+    ) {
+      return "main";
+    }
+  
+    if (
+      category === "tops" ||
+      category === "bottoms" ||
+      behavior === "foldable" ||
+      behavior === "compressible"
+    ) {
+      return "main";
+    }
+  
+    return "carry_on";
+  };
+
+  const buildBagDistribution = (items, suitcases) => {
+    const bagBuckets = suitcases.map((bag) => ({
+      id: bag.id,
+      name: bag.name,
+      bagRole: normalizeBagRole(bag.bag_role),
+      isPrimary: !!bag.is_primary,
+      volumeCm3: Number(bag.volume_cm3 || 0),
+      maxWeightKg: Number(bag.max_weight_kg || 0),
+      usedVolumeCm3: 0,
+      usedWeightG: 0,
+      items: [],
+    }));
+  
+    const findBestBagForRole = (targetRole) => {
+      const exactMatch = bagBuckets.find((bag) => bag.bagRole === targetRole);
+      if (exactMatch) return exactMatch;
+  
+      const primaryMain = bagBuckets.find(
+        (bag) => bag.bagRole === "main" && bag.isPrimary
+      );
+      if (primaryMain) return primaryMain;
+  
+      const anyMain = bagBuckets.find((bag) => bag.bagRole === "main");
+      if (anyMain) return anyMain;
+  
+      return bagBuckets[0] || null;
+    };
+  
+    for (const item of items) {
+      const targetRole = chooseTargetBagRole(item);
+      const targetBag = findBestBagForRole(targetRole);
+  
+      if (!targetBag) continue;
+  
+      targetBag.items.push({
+        tripItemId: item.tripItemId,
+        itemId: item.itemId,
+        name: item.name,
+        quantity: item.quantity,
+        category: item.category,
+        packBehavior: item.packBehavior,
+        finalVolumeCm3: item.finalVolumeCm3,
+        finalWeightG: item.finalWeightG,
+      });
+  
+      targetBag.usedVolumeCm3 += Number(item.finalVolumeCm3 || 0);
+      targetBag.usedWeightG += Number(item.finalWeightG || 0);
+    }
+  
+    return bagBuckets.map((bag) => ({
+      ...bag,
+      usedCapacityPercent:
+        bag.volumeCm3 > 0 ? Math.round((bag.usedVolumeCm3 / bag.volumeCm3) * 100) : 0,
+      usedWeightKg: Number((bag.usedWeightG / 1000).toFixed(2)),
+      remainingVolumeCm3: bag.volumeCm3 - bag.usedVolumeCm3,
+      remainingWeightG: bag.maxWeightKg * 1000 - bag.usedWeightG,
+      volumeFits: bag.usedVolumeCm3 <= bag.volumeCm3,
+      weightFits: bag.usedWeightG <= bag.maxWeightKg * 1000,
+    }));
+  };
+
+
+
+
+
+
+
   const calculateTripResult = ({ suitcases, tripItems, sizeMultipliers }) => {
     const totalAvailableVolumeCm3 = suitcases.reduce(
       (sum, bag) => sum + Number(bag.volume_cm3 || 0),
@@ -417,6 +535,8 @@ const getPackingPriority = (item) => {
       detailedItems,
       totals
     );
+
+    const buildBagDistribution = buildBagDistribution(detailedItems, suitcases);
   
     return {
       totals,
@@ -432,6 +552,7 @@ const getPackingPriority = (item) => {
         isPrimary: !!bag.is_primary,
         volumeCm3: Number(bag.volume_cm3),
         maxWeightKg: Number(bag.max_weight_kg),
+        buildBagDistribution,
       })),
     };
   };
