@@ -373,6 +373,107 @@
 }
 
 
+.trip-results-distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trip-results-distribution-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.trip-results-distribution-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.trip-results-distribution-title {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.trip-results-distribution-meta {
+  margin: 6px 0;
+  color: #4b5563;
+}
+
+.trip-results-bag-fit-badge {
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.trip-results-bag-fit-good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.trip-results-bag-fit-bad {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.trip-results-distribution-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.trip-results-distribution-stat {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.trip-results-distribution-stat-label {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.trip-results-distribution-items h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.trip-results-distribution-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-results-distribution-chip {
+  background: #e2e8f0;
+  color: #111827;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .trip-results-distribution-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .trip-results-distribution-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .trip-results-hero-meta,
   .trip-results-actions-grid,

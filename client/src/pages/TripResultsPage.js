@@ -79,6 +79,7 @@ function TripResultsPage() {
     packingOrder = [],
     suitcaseLayout = {},
     advice = [],
+    bagDistribution,
     smartAdjustments = {
       mainConstraint: "none",
       warnings: [],
@@ -212,6 +213,90 @@ function TripResultsPage() {
                 <p><strong>Primary:</strong> {bag.isPrimary ? "Yes" : "No"}</p>
                 <p><strong>Volume:</strong> {bag.volumeCm3} cm³</p>
                 <p><strong>Max Weight:</strong> {bag.maxWeightKg} kg</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Bag-by-Bag Distribution</h2>
+            <p className="info-text">
+              See how items are distributed across the bags in this trip.
+            </p>
+          </div>
+        </div>
+
+        {bagDistribution.length === 0 ? (
+          <p className="info-text">No bag distribution is available for this result.</p>
+        ) : (
+          <div className="trip-results-distribution-list">
+            {bagDistribution.map((bag) => (
+              <div key={bag.id} className="trip-results-distribution-card">
+                <div className="trip-results-distribution-top">
+                  <div>
+                    <h3 className="trip-results-distribution-title">{bag.name}</h3>
+                    <p className="trip-results-distribution-meta">
+                      <strong>Role:</strong> {bag.bagRole}
+                    </p>
+                    <p className="trip-results-distribution-meta">
+                      <strong>Primary:</strong> {bag.isPrimary ? "Yes" : "No"}
+                    </p>
+                  </div>
+
+                  <div
+                    className={`trip-results-bag-fit-badge ${
+                      bag.volumeFits && bag.weightFits
+                        ? "trip-results-bag-fit-good"
+                        : "trip-results-bag-fit-bad"
+                    }`}
+                  >
+                    {bag.volumeFits && bag.weightFits ? "Fits" : "Needs attention"}
+                  </div>
+                </div>
+
+                <div className="trip-results-distribution-stats">
+                  <div className="trip-results-distribution-stat">
+                    <span className="trip-results-distribution-stat-label">Used Volume</span>
+                    <strong>{bag.usedVolumeCm3} cm³</strong>
+                  </div>
+
+                  <div className="trip-results-distribution-stat">
+                    <span className="trip-results-distribution-stat-label">Used Weight</span>
+                    <strong>{bag.usedWeightKg} kg</strong>
+                  </div>
+
+                  <div className="trip-results-distribution-stat">
+                    <span className="trip-results-distribution-stat-label">Usage</span>
+                    <strong>{bag.usedCapacityPercent}%</strong>
+                  </div>
+
+                  <div className="trip-results-distribution-stat">
+                    <span className="trip-results-distribution-stat-label">Remaining Volume</span>
+                    <strong>{bag.remainingVolumeCm3} cm³</strong>
+                  </div>
+                </div>
+
+                <div className="trip-results-distribution-items">
+                  <h4>Assigned Items</h4>
+
+                  {bag.items?.length === 0 ? (
+                    <p className="info-text">No items assigned to this bag.</p>
+                  ) : (
+                    <div className="trip-results-distribution-chip-list">
+                      {bag.items.map((item, index) => (
+                        <div
+                          key={`${bag.id}-${item.tripItemId || item.itemId || index}`}
+                          className="trip-results-distribution-chip"
+                        >
+                          {item.name} × {item.quantity}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
