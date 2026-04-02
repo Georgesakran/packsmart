@@ -1,4 +1,4 @@
-import { enrichItemWithRules } from "./packingRulesEngine";
+import { enrichItemWithRules } from "./packingRulesEngine.js";
 
 const clampMin = (value, min = 1) => Math.max(min, value);
 

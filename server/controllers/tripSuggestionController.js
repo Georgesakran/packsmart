@@ -59,13 +59,14 @@ const generateSuggestions = async (req, res) => {
 
     const profileRows = await queryAsync(
       `
-      SELECT
-        default_size,
-        travel_style,
-        preferred_suitcase_name
-      FROM user_profiles
-      WHERE user_id = ?
-      LIMIT 1
+        SELECT
+          default_size,
+          travel_style,
+          preferred_suitcase_name,
+          packing_mode
+        FROM user_profiles
+        WHERE user_id = ?
+        LIMIT 1
       `,
       [userId]
     );
