@@ -82,6 +82,7 @@ function ProfilePage() {
         gender: form.gender || null,
         defaultSize: form.defaultSize || null,
         travelStyle: form.travelStyle || "casual",
+        packingMode: form.packingMode || "balanced",
         preferredSuitcaseName: form.preferredSuitcaseName || null,
         notes: form.notes || null,
       });
@@ -130,6 +131,13 @@ function ProfilePage() {
             <span className="trip-form-hero-label">Travel style</span>
             <strong className="trip-form-hero-value">
               {form.travelStyle || "casual"}
+            </strong>
+          </div>
+
+          <div className="trip-form-hero-box">
+            <span className="trip-form-hero-label">Packing mode</span>
+            <strong className="trip-form-hero-value">
+              {form.packingMode || "balanced"}
             </strong>
           </div>
         </div>
@@ -247,6 +255,18 @@ function ProfilePage() {
             </div>
 
             <div className="control-group">
+              <label>Packing Mode</label>
+              <select
+                value={form.packingMode}
+                onChange={(e) => handleChange("packingMode", e.target.value)}
+              >
+                <option value="light">light</option>
+                <option value="balanced">balanced</option>
+                <option value="prepared">prepared</option>
+              </select>
+            </div>
+
+            <div className="control-group">
               <label>Notes</label>
               <textarea
                 className="profile-textarea"
@@ -255,6 +275,7 @@ function ProfilePage() {
                 onChange={(e) => handleChange("notes", e.target.value)}
               />
             </div>
+
           </div>
 
           <div className="profile-actions">

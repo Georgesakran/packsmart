@@ -1,4 +1,4 @@
-import { enrichItemWithRules } from "./packingRulesEngine.js";
+import { enrichItemWithRules } from "./packingRulesEngine";
 
 const getPackingPriority = (item) => {
     const name = (item.name || "").toLowerCase();
