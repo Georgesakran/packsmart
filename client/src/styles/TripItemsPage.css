@@ -223,7 +223,51 @@
   border-color: #94a3b8;
   box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.15);
 }
+.trip-item-priority-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
 
+.trip-item-priority-badge {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.priority-essential {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.priority-recommended {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.priority-optional {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.remove-high {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.remove-medium {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.remove-low {
+  background: #ede9fe;
+  color: #6d28d9;
+}
 @media (max-width: 768px) {
   .trip-items-grid,
   .trip-item-edit-grid {

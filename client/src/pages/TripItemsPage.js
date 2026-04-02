@@ -727,6 +727,34 @@ function TripItemsPage() {
                   <h3 className="trip-item-row-title">
                     {item.custom_name || item.base_item_name || `Item #${item.item_id || item.id}`}
                   </h3>
+                  <div className="trip-item-priority-row">
+                    <span
+                      className={`trip-item-priority-badge ${
+                        item.priority === "essential"
+                          ? "priority-essential"
+                          : item.priority === "optional"
+                          ? "priority-optional"
+                          : "priority-recommended"
+                      }`}
+                    >
+                      {item.priority}
+                    </span>
+
+                    <span
+                      className={`trip-item-priority-badge ${
+                        item.removePriority === "high"
+                          ? "remove-high"
+                          : item.removePriority === "low"
+                          ? "remove-low"
+                          : "remove-medium"
+                      }`}
+                    >
+                      Remove: {item.removePriority}
+                    </span>
+                  </div>
+                  <p className="trip-item-row-meta">
+                    <strong>Preferred Bag:</strong> {item.preferredBagRole || "auto"}
+                  </p>
                   <p className="trip-item-row-meta">
                     <strong>Source:</strong> {item.source_type}
                   </p>

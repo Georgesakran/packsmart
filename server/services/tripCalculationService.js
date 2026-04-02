@@ -1,3 +1,5 @@
+import { enrichItemWithRules } from "./packingRulesEngine";
+
 const getPackingPriority = (item) => {
     const name = (item.name || "").toLowerCase();
   
@@ -183,8 +185,17 @@ const getPackingPriority = (item) => {
   const buildAdjustmentSuggestions = (items, totals) => {
     const mainConstraint = getMainConstraint(totals);
   
-    const sortedByVolume = [...items].sort((a, b) => b.finalVolumeCm3 - a.finalVolumeCm3);
-    const sortedByWeight = [...items].sort((a, b) => b.finalWeightG - a.finalWeightG);
+    const sortedByVolume = [...items].sort((a, b) => {
+      const aScore = Number(a.finalVolumeCm3 || 0) + (Number(a.removePriorityScore || 0) * 1000);
+      const bScore = Number(b.finalVolumeCm3 || 0) + (Number(b.removePriorityScore || 0) * 1000);
+      return bScore - aScore;
+    });
+    
+    const sortedByWeight = [...items].sort((a, b) => {
+      const aScore = Number(a.finalWeightG || 0) + (Number(a.removePriorityScore || 0) * 300);
+      const bScore = Number(b.finalWeightG || 0) + (Number(b.removePriorityScore || 0) * 300);
+      return bScore - aScore;
+    });
   
     const adjustments = [];
     const warnings = [];
@@ -307,6 +318,8 @@ const getPackingPriority = (item) => {
   };
   
   const chooseTargetBagRole = (item) => {
+    if (item.preferredBagRole) return item.preferredBagRole;
+  
     const name = (item.name || "").toLowerCase();
     const category = (item.category || "").toLowerCase();
     const behavior = (item.packBehavior || "").toLowerCase();
@@ -431,6 +444,9 @@ const getPackingPriority = (item) => {
   };
   
   const isMoveCandidate = (item) => {
+    if (item.priority === "essential" && item.preferredBagRole === "personal") return true;
+    if (item.removePriority === "high") return true;
+
     const category = (item.category || "").toLowerCase();
     const behavior = (item.packBehavior || "").toLowerCase();
     const name = (item.name || "").toLowerCase();
@@ -547,21 +563,22 @@ const getPackingPriority = (item) => {
       totalVolumeCm3 += itemVolume;
       totalWeightG += itemWeight;
   
-      return {
+      return enrichItemWithRules({
         tripItemId: item.id,
         itemId: item.item_id,
         name: item.custom_name || item.base_item_name || "Custom Item",
-        category: item.category || "custom",
-        quantity,
-        selectedSize: item.size_code || null,
-        sizeMultiplier,
-        baseVolumeCm3: Number(item.base_volume_cm3),
-        baseWeightG: Number(item.base_weight_g),
-        finalVolumeCm3: Math.round(itemVolume),
-        finalWeightG: Math.round(itemWeight),
+        quantity: Number(item.quantity || 1),
+        category: item.category,
+        audience: item.audience,
+        sizeCode: item.size_code || null,
         packBehavior: item.pack_behavior,
+        baseVolumeCm3,
+        baseWeightG,
+        finalVolumeCm3,
+        finalWeightG,
         source: item.source_type,
-      };
+        assignedBagId: item.assigned_bag_id || null,
+      });
     });
   
     const weightKg = Number((totalWeightG / 1000).toFixed(2));

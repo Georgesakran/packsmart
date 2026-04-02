@@ -1,3 +1,5 @@
+import { enrichItemWithRules } from "./packingRulesEngine";
+
 const clampMin = (value, min = 1) => Math.max(min, value);
 
 const capByCategory = (name, quantity, days) => {
@@ -222,10 +224,13 @@ const buildSuggestionRules = ({
     }
   }
 
-  return finalItems.map((item) => ({
-    ...item,
-    sizeCode: preferredSize,
-  }));
+  return finalItems.map((item) => 
+    enrichItemWithRules({
+      ...item,
+      sizeCode: preferredSize,
+    })
+  );
+  
 };
 
 module.exports = { buildSuggestionRules };

@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { enrichItemWithRules } = require("../services/packingRulesEngine");
 
 const queryAsync = (query, values = []) =>
   new Promise((resolve, reject) => {
@@ -155,7 +156,15 @@ const getTripItems = async (req, res) => {
         return res.status(500).json({ message: "Server error" });
       }
 
-      return res.status(200).json(results);
+      const enrichedItems = results.map((item) =>
+        enrichItemWithRules({
+          ...item,
+          name: item.custom_name || item.base_item_name || "Custom Item",
+          category: item.category,
+        })
+      );
+      
+      return res.status(200).json(enrichedItems);
     });
   } catch (error) {
     console.error("Get trip items catch error:", error.message);

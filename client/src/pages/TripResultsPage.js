@@ -282,7 +282,7 @@ function TripResultsPage() {
 
                 <div className="trip-results-distribution-items">
                   <h4>Assigned Items</h4>
-                  
+
                   <div className="trip-results-distribution-legend">
                     <span className="trip-results-distribution-legend-item">
                       <span className="trip-results-distribution-chip-badge chip-badge-manual">Manual</span>
@@ -307,7 +307,17 @@ function TripResultsPage() {
                           <span className="trip-results-distribution-chip-name">
                             {item.name} × {item.quantity}
                           </span>
-
+                          <span
+                            className={`trip-results-distribution-chip-badge ${
+                              item.priority === "essential"
+                                ? "chip-badge-essential"
+                                : item.priority === "optional"
+                                ? "chip-badge-optional"
+                                : "chip-badge-recommended"
+                            }`}
+                          >
+                            {item.priority}
+                          </span>
                           <span
                             className={`trip-results-distribution-chip-badge ${
                               item.assignmentMode === "manual"

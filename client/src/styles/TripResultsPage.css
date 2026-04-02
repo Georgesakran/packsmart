@@ -564,6 +564,21 @@
   font-size: 13px;
 }
 
+.chip-badge-essential {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.chip-badge-recommended {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.chip-badge-optional {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 @media (max-width: 768px) {
   .trip-results-rebalance-flow {
     flex-direction: column;
