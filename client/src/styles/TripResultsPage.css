@@ -669,6 +669,63 @@
   line-height: 1.6;
 }
 
+.trip-explainability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.trip-explainability-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.trip-explainability-card-full {
+  grid-column: 1 / -1;
+}
+
+.trip-explainability-label {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.trip-explainability-value {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.trip-explainability-text {
+  margin: 0;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.trip-explainability-priority-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trip-explainability-priority-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.trip-explainability-priority-title {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
 @media (max-width: 768px) {
   .trip-results-rebalance-flow {
     flex-direction: column;
@@ -677,12 +734,6 @@
 
   .trip-results-rebalance-arrow {
     align-self: center;
-  }
-}
-
-@media (max-width: 900px) {
-  .trip-results-distribution-stats {
-    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -710,5 +761,21 @@
 
   .trip-intelligence-card-full {
     grid-column: auto;
+  }
+
+  .trip-results-distribution-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .trip-explainability-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-explainability-card-full {
+    grid-column: auto;
+  }
+
+  .trip-explainability-priority-row {
+    grid-template-columns: 1fr;
   }
 }

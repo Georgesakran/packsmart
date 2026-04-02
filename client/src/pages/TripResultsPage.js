@@ -140,6 +140,55 @@ function TripResultsPage() {
     return "No urgent action needed";
   };
 
+  const getPrimaryBagName = () => {
+    const primary = suitcases.find((bag) => bag.isPrimary);
+    return primary?.name || "No primary bag";
+  };
+  
+  const getManualAssignmentsCount = () => {
+    return bagDistribution.reduce((sum, bag) => {
+      const manualCount = (bag.items || []).filter(
+        (item) => item.assignmentMode === "manual"
+      ).length;
+      return sum + manualCount;
+    }, 0);
+  };
+  
+  const getAutoAssignmentsCount = () => {
+    return bagDistribution.reduce((sum, bag) => {
+      const autoCount = (bag.items || []).filter(
+        (item) => item.assignmentMode === "auto"
+      ).length;
+      return sum + autoCount;
+    }, 0);
+  };
+  
+  const getPriorityBreakdown = () => {
+    const allItems = bagDistribution.flatMap((bag) => bag.items || []);
+  
+    const essential = allItems.filter((item) => item.priority === "essential").length;
+    const recommended = allItems.filter((item) => item.priority === "recommended").length;
+    const optional = allItems.filter((item) => item.priority === "optional").length;
+  
+    return { essential, recommended, optional };
+  };
+  
+  const getDecisionLogicSummary = () => {
+    if (itemSubstitutionSuggestions.length > 0) {
+      return "Substitution logic is active because the current setup has packing pressure or optimization opportunities.";
+    }
+  
+    if (bagRebalancingSuggestions.length > 0) {
+      return "Rebalancing logic is active because some bags can be packed more evenly.";
+    }
+  
+    if (smartAdjustments?.adjustments?.length > 0) {
+      return "Adjustment logic is active because the current packing setup can still be improved.";
+    }
+  
+    return "The current result looks stable with no major correction needed.";
+  };
+
   return (
     <div className="page-container">
       <div className="trip-results-hero card">
@@ -287,6 +336,85 @@ function TripResultsPage() {
             <strong className="trip-intelligence-value">{getTopActionNow()}</strong>
             <p className="trip-intelligence-subtext">
               The single most useful next move based on this result.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Why This Result Happened</h2>
+            <p className="info-text">
+              A deeper explanation of the factors that shaped this packing result.
+            </p>
+          </div>
+        </div>
+
+        <div className="trip-explainability-grid">
+          <div className="trip-explainability-card">
+            <span className="trip-explainability-label">Trip Context</span>
+            <strong className="trip-explainability-value">Context-driven planning</strong>
+            <p className="trip-explainability-text">
+              This result is shaped by your trip duration, travel type, weather, and
+              traveler count. These inputs affect clothing quantities, layer logic,
+              and item balance.
+            </p>
+          </div>
+
+          <div className="trip-explainability-card">
+            <span className="trip-explainability-label">Preference Influence</span>
+            <strong className="trip-explainability-value">Profile-aware logic</strong>
+            <p className="trip-explainability-text">
+              Your profile settings such as size, travel style, and packing mode can
+              change how many items are suggested and how conservative or light the
+              setup becomes.
+            </p>
+          </div>
+
+          <div className="trip-explainability-card">
+            <span className="trip-explainability-label">Bag Logic</span>
+            <strong className="trip-explainability-value">
+              {suitcases.length} bags considered
+            </strong>
+            <p className="trip-explainability-text">
+              The calculation used all linked trip bags together. Primary bag:{" "}
+              <strong>{getPrimaryBagName()}</strong>. Manual assignments:{" "}
+              <strong>{getManualAssignmentsCount()}</strong>. Auto assignments:{" "}
+              <strong>{getAutoAssignmentsCount()}</strong>.
+            </p>
+          </div>
+
+          <div className="trip-explainability-card">
+            <span className="trip-explainability-label">Decision Logic</span>
+            <strong className="trip-explainability-value">Rule-based optimization</strong>
+            <p className="trip-explainability-text">
+              {getDecisionLogicSummary()}
+            </p>
+          </div>
+
+          <div className="trip-explainability-card trip-explainability-card-full">
+            <span className="trip-explainability-label">Priority Breakdown</span>
+            <div className="trip-explainability-priority-row">
+              <div className="trip-explainability-priority-box">
+                <span className="trip-explainability-priority-title">Essential</span>
+                <strong>{getPriorityBreakdown().essential}</strong>
+              </div>
+
+              <div className="trip-explainability-priority-box">
+                <span className="trip-explainability-priority-title">Recommended</span>
+                <strong>{getPriorityBreakdown().recommended}</strong>
+              </div>
+
+              <div className="trip-explainability-priority-box">
+                <span className="trip-explainability-priority-title">Optional</span>
+                <strong>{getPriorityBreakdown().optional}</strong>
+              </div>
+            </div>
+
+            <p className="trip-explainability-text" style={{ marginTop: "14px" }}>
+              Priority tiers help the system decide what should stay, what can move
+              between bags, and what may be reduced or substituted first.
             </p>
           </div>
         </div>
@@ -693,6 +821,8 @@ function TripResultsPage() {
           </p>
         </div>
       </div>
+
+
 
       <div className="card" style={{ marginTop: "20px" }}>
         <h2 className="trip-results-card-title">Suitcase Layout</h2>
