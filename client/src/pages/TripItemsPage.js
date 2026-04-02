@@ -26,6 +26,9 @@ function TripItemsPage() {
 
   const [clearingItems, setClearingItems] = useState(false);
 
+  const [tripSuitcases, setTripSuitcases] = useState([]);
+  const [assigningBagItemId, setAssigningBagItemId] = useState(null);
+
   const [editingItemId, setEditingItemId] = useState(null);
   const [editForm, setEditForm] = useState({
     customName: "",
@@ -61,16 +64,19 @@ function TripItemsPage() {
       setLoading(true);
       setPageError("");
 
-      const [tripItemsRes, baseItemsRes, profileRes, templatesRes] = await Promise.all([
+      const [tripItemsRes, baseItemsRes, profileRes, templatesRes, tripSuitcasesRes] =
+      await Promise.all([
         api.get(`/trips/${id}/items`),
         api.get("/items"),
         api.get("/users/profile"),
         api.get("/packing-templates"),
+        api.get(`/trips/${id}/suitcases`),
       ]);
       setProfileInfo(profileRes.data || null);
       setTripItems(tripItemsRes.data || []);
       setBaseItems(baseItemsRes.data || []);
       setPackingTemplates(templatesRes.data || []);
+      setTripSuitcases(tripSuitcasesRes.data || []);
     } catch (error) {
       console.error("Load trip items page error:", error);
       setPageError(
@@ -369,6 +375,34 @@ function TripItemsPage() {
       );
     } finally {
       setClearingItems(false);
+    }
+  };
+
+  const handleAssignBag = async (tripItemId, assignedBagId) => {
+    try {
+      setAssigningBagItemId(tripItemId);
+      setActionError("");
+      setActionMessage("");
+  
+      const response = await api.put(
+        `/trips/${id}/items/${tripItemId}/assign-bag`,
+        {
+          assignedBagId: assignedBagId || null,
+        }
+      );
+  
+      setActionMessage(
+        response.data.message || "Trip item bag assignment updated successfully."
+      );
+  
+      await loadData();
+    } catch (error) {
+      console.error("Assign bag error:", error);
+      setActionError(
+        error?.response?.data?.message || "Failed to assign item to bag."
+      );
+    } finally {
+      setAssigningBagItemId(null);
     }
   };
 
@@ -708,6 +742,30 @@ function TripItemsPage() {
                     <strong>Volume:</strong> {item.base_volume_cm3} cm³ •{" "}
                     <strong>Weight:</strong> {item.base_weight_g} g
                   </p>
+                  <div className="trip-item-bag-assign-box">
+                    <label className="trip-item-bag-assign-label">Bag Assignment</label>
+                    <select
+                      className="trip-item-bag-select"
+                      value={item.assigned_bag_id || ""}
+                      onChange={(e) => handleAssignBag(item.id, e.target.value)}
+                      disabled={assigningBagItemId === item.id}
+                    >
+                      <option value="">Auto</option>
+                      {tripSuitcases.map((bag) => (
+                        <option key={bag.id} value={bag.id}>
+                          {bag.name} — {bag.bag_role}
+                          {bag.is_primary ? " (Primary)" : ""}
+                        </option>
+                      ))}
+                    </select>
+
+                    <p className="trip-item-row-meta">
+                      <strong>Current:</strong>{" "}
+                      {item.assigned_bag_name
+                        ? `${item.assigned_bag_name} (${item.assigned_bag_role})`
+                        : "Auto assignment"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="trip-item-row-actions">

@@ -107,7 +107,7 @@ const calculateTrip = async (req, res) => {
               advice_json,
               smart_adjustments_json,
               bag_distribution_json,
-              bag_rebalancing_suggestions_json,
+              bag_rebalancing_suggestions_json
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE

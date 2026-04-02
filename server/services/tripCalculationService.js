@@ -350,6 +350,7 @@ const getPackingPriority = (item) => {
   };
 
   const buildBagDistribution = (items, suitcases) => {
+
     const bagBuckets = suitcases.map((bag) => ({
       id: bag.id,
       name: bag.name,
@@ -378,8 +379,16 @@ const getPackingPriority = (item) => {
     };
   
     for (const item of items) {
-      const targetRole = chooseTargetBagRole(item);
-      const targetBag = findBestBagForRole(targetRole);
+      let targetBag = null;
+
+      if (item.assignedBagId) {
+        targetBag = bagBuckets.find((bag) => bag.id === Number(item.assignedBagId));
+      }
+      
+      if (!targetBag) {
+        const targetRole = chooseTargetBagRole(item);
+        targetBag = findBestBagForRole(targetRole);
+      }
   
       if (!targetBag) continue;
   
@@ -392,6 +401,7 @@ const getPackingPriority = (item) => {
         packBehavior: item.packBehavior,
         finalVolumeCm3: item.finalVolumeCm3,
         finalWeightG: item.finalWeightG,
+        assignedBagId: item.assigned_bag_id || null,
       });
   
       targetBag.usedVolumeCm3 += Number(item.finalVolumeCm3 || 0);

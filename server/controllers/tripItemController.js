@@ -42,6 +42,7 @@ const createTripItem = async (req, res) => {
       baseVolumeCm3,
       baseWeightG,
       packBehavior,
+      assignedBagId,
     } = req.body;
 
     const trip = await getOwnedTrip(tripId, userId);
@@ -82,9 +83,10 @@ const createTripItem = async (req, res) => {
         audience,
         base_volume_cm3,
         base_weight_g,
-        pack_behavior
+        pack_behavior,
+        assigned_bag_id
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -101,6 +103,7 @@ const createTripItem = async (req, res) => {
         baseVolumeCm3,
         baseWeightG,
         packBehavior,
+        assignedBagId || null,
       ],
       (err, result) => {
         if (err) {
@@ -136,9 +139,12 @@ const getTripItems = async (req, res) => {
     const query = `
       SELECT
         ti.*,
-        i.name AS base_item_name
+        i.name AS base_item_name,
+        ts.name AS assigned_bag_name,
+        ts.bag_role AS assigned_bag_role
       FROM trip_items ti
       LEFT JOIN items i ON ti.item_id = i.id
+      LEFT JOIN trip_suitcases ts ON ti.assigned_bag_id = ts.id
       WHERE ti.trip_id = ?
       ORDER BY ti.created_at ASC
     `;
@@ -174,6 +180,7 @@ const updateTripItem = async (req, res) => {
       baseVolumeCm3,
       baseWeightG,
       packBehavior,
+      assignedBagId,
     } = req.body;
 
     const trip = await getOwnedTrip(tripId, userId);
@@ -196,7 +203,8 @@ const updateTripItem = async (req, res) => {
         audience = ?,
         base_volume_cm3 = ?,
         base_weight_g = ?,
-        pack_behavior = ?
+        pack_behavior = ?,
+        assigned_bag_id = ?
       WHERE id = ? AND trip_id = ?
     `;
 
@@ -215,6 +223,7 @@ const updateTripItem = async (req, res) => {
         packBehavior,
         tripItemId,
         tripId,
+        assignedBagId || null,
       ],
       (err, result) => {
         if (err) {
@@ -308,10 +317,72 @@ const clearTripItems = async (req, res) => {
   }
 };
 
+const assignTripItemToBag = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId, itemId } = req.params;
+    const { assignedBagId } = req.body;
+
+    const trip = await getOwnedTrip(tripId, userId);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const itemRows = await queryAsync(
+      `
+      SELECT *
+      FROM trip_items
+      WHERE id = ? AND trip_id = ?
+      LIMIT 1
+      `,
+      [itemId, tripId]
+    );
+
+    if (itemRows.length === 0) {
+      return res.status(404).json({ message: "Trip item not found" });
+    }
+
+    if (assignedBagId) {
+      const bagRows = await queryAsync(
+        `
+        SELECT *
+        FROM trip_suitcases
+        WHERE id = ? AND trip_id = ?
+        LIMIT 1
+        `,
+        [assignedBagId, tripId]
+      );
+
+      if (bagRows.length === 0) {
+        return res.status(404).json({ message: "Assigned bag not found for this trip" });
+      }
+    }
+
+    await queryAsync(
+      `
+      UPDATE trip_items
+      SET assigned_bag_id = ?
+      WHERE id = ? AND trip_id = ?
+      `,
+      [assignedBagId || null, itemId, tripId]
+    );
+
+    return res.status(200).json({
+      message: assignedBagId
+        ? "Trip item assigned to bag successfully"
+        : "Trip item bag assignment cleared successfully",
+    });
+  } catch (error) {
+    console.error("Assign trip item to bag error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTripItem,
   getTripItems,
   updateTripItem,
   deleteTripItem,
   clearTripItems,
+  assignTripItemToBag,
 };
