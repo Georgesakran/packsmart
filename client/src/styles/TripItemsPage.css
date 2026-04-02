@@ -154,6 +154,23 @@
   margin-bottom: 6px;
 }
 
+.trip-items-template-box {
+  margin-bottom: 20px;
+}
+
+.trip-items-template-actions {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.trip-items-template-actions .control-group {
+  flex: 1;
+  min-width: 240px;
+}
+
+
 @media (max-width: 768px) {
   .trip-items-grid,
   .trip-item-edit-grid {
@@ -165,5 +182,14 @@
   }
   .trip-items-personalization-grid {
     grid-template-columns: 1fr;
+  }
+
+  .trip-items-template-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trip-items-template-actions .control-group {
+    min-width: auto;
   }
 }

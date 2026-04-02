@@ -66,6 +66,13 @@ function Navbar() {
                 Suitcases
               </Link>
 
+              <Link
+                to="/packing-templates"
+                className={`navbar-feedback-btn ${isActive("/packing-templates") ? "navbar-link-active" : ""}`}
+              >
+                Templates
+              </Link>
+
               <button className="navbar-feedback-btn" onClick={handleLogout}>
                 Logout
               </button>

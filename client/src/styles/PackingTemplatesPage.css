@@ -1,0 +1,144 @@
+.packing-templates-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 16px;
+  }
+  
+  .packing-templates-form,
+  .packing-templates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .packing-templates-form-grid,
+  .packing-template-item-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  
+  .packing-templates-textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    resize: vertical;
+    font: inherit;
+  }
+  
+  .packing-templates-textarea:focus {
+    outline: none;
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.15);
+  }
+  
+  .packing-templates-base-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .packing-template-add-chip {
+    border: none;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 999px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  
+  .packing-template-empty-text {
+    margin-top: 12px;
+  }
+  
+  .packing-template-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  
+  .packing-template-item-row {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    background: #f8fafc;
+  }
+  
+  .packing-template-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  
+  .packing-template-item-top h4 {
+    margin: 0;
+  }
+  
+  .packing-templates-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .packing-template-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px;
+    background: #f8fafc;
+  }
+  
+  .packing-template-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .packing-template-card-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .packing-template-card-meta {
+    margin: 6px 0;
+    color: #4b5563;
+  }
+  
+  .packing-template-card-notes {
+    margin: 14px 0 0 0;
+    color: #475569;
+  }
+  
+  .packing-templates-error {
+    margin-bottom: 16px;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+  }
+  
+  .packing-templates-success {
+    margin-bottom: 16px;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+  }
+  
+  @media (max-width: 900px) {
+    .packing-templates-grid,
+    .packing-templates-form-grid,
+    .packing-template-item-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .packing-templates-actions {
+      flex-direction: column;
+    }
+  }

@@ -19,6 +19,7 @@ import TripResultsPage from "./pages/TripResultsPage";
 import EditTripPage from "./pages/EditTripPage";
 import ProfilePage from "./pages/ProfilePage";
 import SavedSuitcasesPage from "./pages/SavedSuitcasesPage";
+import PackingTemplatesPage from "./pages/PackingTemplatesPage";
 
 function App() {
   return (
@@ -120,6 +121,15 @@ function App() {
           element={
             <ProtectedRoute>
               <SavedSuitcasesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/packing-templates"
+          element={
+            <ProtectedRoute>
+              <PackingTemplatesPage />
             </ProtectedRoute>
           }
         />
