@@ -83,7 +83,7 @@ function App() {
           }
         />
         <Route
-          path="/trips/:id/suitcase"
+          path="/trips/:id/suitcases"
           element={
             <ProtectedRoute>
               <TripSuitcasePage />
