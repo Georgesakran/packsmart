@@ -144,6 +144,36 @@ const getLaundryAdjustedClothingCount = (days, multiplier = 0.7) => {
   return Math.max(6, Math.ceil(days * 0.55));
 };
 
+const applyPackingModeAdjustments = (items, packingMode, weatherType) => {
+  const updated = [...items];
+
+  const changeQty = (name, updater) => {
+    const item = updated.find((entry) => entry.name === name);
+    if (!item) return;
+    item.quantity = clampMin(updater(item.quantity), 0);
+  };
+
+  if (packingMode === "light") {
+    changeQty("T-shirt", (q) => Math.max(1, q - 1));
+    changeQty("Shirt", (q) => Math.max(1, q - 1));
+    changeQty("Shorts", (q) => Math.max(0, q - 1));
+    changeQty("Pants", (q) => Math.max(1, q - 1));
+    changeQty("Jeans", (q) => Math.max(1, q - 1));
+    changeQty("Hoodie", (q) => Math.max(0, q - 1));
+  }
+
+  if (packingMode === "prepared") {
+    changeQty("Underwear", (q) => q + 1);
+    changeQty("Socks", (q) => q + 1);
+    changeQty("T-shirt", (q) => q + 1);
+    if (weatherType !== "hot") {
+      changeQty("Hoodie", (q) => q + 1);
+    }
+  }
+
+  return updated.filter((item) => item.quantity > 0);
+};
+
 const buildSuggestionRules = ({
   durationDays,
   travelType,
@@ -151,11 +181,13 @@ const buildSuggestionRules = ({
   travelerCount,
   defaultSize,
   travelStyle,
+  packingMode,
 }) => {
   const days = Number(durationDays) || 1;
   const travelers = Number(travelerCount) || 1;
   const preferredSize = defaultSize || "M";
   const tripTier = getTripLengthTier(days);
+  const resolvedPackingMode = packingMode || "balanced";
 
   const items = [];
 
@@ -285,14 +317,36 @@ if (tripTier === "very_short") {
 
   // Travel style adjustments
   cleaned = applyTravelStyleAdjustments(cleaned, travelStyle, days, weatherType);
+  cleaned = applyPackingModeAdjustments(
+    cleaned,
+    resolvedPackingMode,
+    weatherType
+  );
 
   // Cap unrealistic quantities
-  cleaned = cleaned.map((item) => ({
-    ...item,
-    quantity: capByCategory(item.name, item.quantity, days, weatherType),
-  }));
+  cleaned = cleaned.map((item) => {
+    let cappedQty = capByCategory(item.name, item.quantity, days, weatherType);
+  
+    if (resolvedPackingMode === "light") {
+      if (item.priority === "optional") {
+        cappedQty = Math.max(0, cappedQty - 1);
+      }
+    }
+  
+    if (resolvedPackingMode === "prepared") {
+      if (item.priority === "essential") {
+        cappedQty += 1;
+      }
+    }
+  
+    return {
+      ...item,
+      quantity: cappedQty,
+    };
+  });
 
   // Final dedupe safeguard
+  cleaned = cleaned.filter((item) => item.quantity > 0);
   const finalItems = [];
   for (const item of cleaned) {
     const existing = finalItems.find((x) => x.name === item.name);

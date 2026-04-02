@@ -82,9 +82,9 @@ function TripDetailsPage() {
       const response = await api.post(`/trips/${id}/generate-suggestions`, {});
 
       const generatedMessage =
-        response.data?.profileUsed
-          ? `Suggestions generated successfully using your size ${response.data.profileUsed.defaultSize} and travel style ${response.data.profileUsed.travelStyle}.`
-          : response.data.message || "Suggestions generated successfully.";
+      response.data?.profileUsed
+        ? `Suggestions generated successfully using your size ${response.data.profileUsed.defaultSize}, travel style ${response.data.profileUsed.travelStyle}, and packing mode ${response.data.profileUsed.packingMode}.`
+        : response.data.message || "Suggestions generated successfully.";
 
       setActionMessage(generatedMessage);
       setSuggestionMeta({
@@ -94,6 +94,7 @@ function TripDetailsPage() {
         travelerCount: response.data?.trip?.travelerCount,
         defaultSize: response.data?.profileUsed?.defaultSize,
         travelStyle: response.data?.profileUsed?.travelStyle,
+        packingMode: response.data?.profileUsed?.packingMode,
       });
       await loadTripData();
     } catch (error) {
@@ -261,7 +262,8 @@ function TripDetailsPage() {
                 {suggestionMeta.defaultSize || "M"}
               </div>
               <div className="trip-status-card-subtext">
-                Travel style: {suggestionMeta.travelStyle || "casual"}
+                Travel style: {suggestionMeta.travelStyle || "casual"} • Packing mode:{" "}
+                {suggestionMeta.packingMode || "balanced"}
               </div>
             </div>
           </div>

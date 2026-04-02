@@ -80,6 +80,7 @@ const generateSuggestions = async (req, res) => {
       travelerCount: trip.traveler_count,
       defaultSize: userProfile?.default_size || "M",
       travelStyle: userProfile?.travel_style || "casual",
+      packingMode: userProfile?.packing_mode || "balanced",
     });
 
     if (!suggestedRules.length) {
@@ -175,6 +176,7 @@ const generateSuggestions = async (req, res) => {
         defaultSize: userProfile?.default_size || "M",
         travelStyle: userProfile?.travel_style || "casual",
         preferredSuitcaseName: userProfile?.preferred_suitcase_name || "",
+        packingMode: userProfile?.packing_mode || "balanced",
       },
       suggestions: insertedItems,
     });
