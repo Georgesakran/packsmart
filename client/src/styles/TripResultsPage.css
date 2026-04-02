@@ -616,6 +616,58 @@
   color: #475569;
   line-height: 1.6;
 }
+.trip-results-substitution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trip-results-substitution-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.trip-results-substitution-top {
+  margin-bottom: 12px;
+}
+
+.trip-results-substitution-type {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.substitution-replace {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.substitution-reduce {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.substitution-simplify {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.trip-results-substitution-title {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.trip-results-substitution-reason {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
 
 @media (max-width: 768px) {
   .trip-results-rebalance-flow {

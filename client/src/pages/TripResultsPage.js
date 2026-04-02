@@ -81,6 +81,7 @@ function TripResultsPage() {
     advice = [],
     bagDistribution = [],
     bagRebalancingSuggestions = [],
+    itemSubstitutionSuggestions = [],
     smartAdjustments = {
       mainConstraint: "none",
       warnings: [],
@@ -487,6 +488,69 @@ function TripResultsPage() {
                 </div>
 
                 <p className="trip-results-rebalance-reason">
+                  {suggestion.reason}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Item Substitution Suggestions</h2>
+            <p className="info-text">
+              Suggested ways to simplify, reduce, or replace items in this setup.
+            </p>
+          </div>
+        </div>
+
+        {itemSubstitutionSuggestions.length === 0 ? (
+          <p className="info-text">
+            No substitution suggestions are needed for this result.
+          </p>
+        ) : (
+          <div className="trip-results-substitution-list">
+            {itemSubstitutionSuggestions.map((suggestion, index) => (
+              <div
+                key={`substitution-${index}`}
+                className="trip-results-substitution-card"
+              >
+                <div className="trip-results-substitution-top">
+                  <span
+                    className={`trip-results-substitution-type ${
+                      suggestion.type === "replace"
+                        ? "substitution-replace"
+                        : suggestion.type === "reduce"
+                        ? "substitution-reduce"
+                        : "substitution-simplify"
+                    }`}
+                  >
+                    {suggestion.type}
+                  </span>
+                </div>
+
+                {suggestion.type === "replace" && (
+                  <h3 className="trip-results-substitution-title">
+                    Replace {suggestion.fromItem} with {suggestion.toItem}
+                  </h3>
+                )}
+
+                {suggestion.type === "reduce" && (
+                  <h3 className="trip-results-substitution-title">
+                    Reduce {suggestion.itemName} from {suggestion.fromQuantity} to{" "}
+                    {suggestion.toQuantity}
+                  </h3>
+                )}
+
+                {suggestion.type === "simplify" && (
+                  <h3 className="trip-results-substitution-title">
+                    Simplify {suggestion.fromItem} into {suggestion.toItem}
+                  </h3>
+                )}
+
+                <p className="trip-results-substitution-reason">
                   {suggestion.reason}
                 </p>
               </div>
