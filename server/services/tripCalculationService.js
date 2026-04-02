@@ -402,6 +402,7 @@ const getPackingPriority = (item) => {
         finalVolumeCm3: item.finalVolumeCm3,
         finalWeightG: item.finalWeightG,
         assignedBagId: item.assigned_bag_id || null,
+        assignmentMode: item.assignedBagId ? "manual" : "auto",
       });
   
       targetBag.usedVolumeCm3 += Number(item.finalVolumeCm3 || 0);

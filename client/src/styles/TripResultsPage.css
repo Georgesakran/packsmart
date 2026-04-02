@@ -521,6 +521,49 @@
   line-height: 1.6;
 }
 
+.trip-results-distribution-chip-rich {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trip-results-distribution-chip-name {
+  font-weight: 600;
+}
+
+.trip-results-distribution-chip-badge {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chip-badge-manual {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.chip-badge-auto {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.trip-results-distribution-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.trip-results-distribution-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 13px;
+}
+
 @media (max-width: 768px) {
   .trip-results-rebalance-flow {
     flex-direction: column;

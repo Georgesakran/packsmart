@@ -282,7 +282,19 @@ function TripResultsPage() {
 
                 <div className="trip-results-distribution-items">
                   <h4>Assigned Items</h4>
+                  
+                  <div className="trip-results-distribution-legend">
+                    <span className="trip-results-distribution-legend-item">
+                      <span className="trip-results-distribution-chip-badge chip-badge-manual">Manual</span>
+                      User-selected bag
+                    </span>
 
+                    <span className="trip-results-distribution-legend-item">
+                      <span className="trip-results-distribution-chip-badge chip-badge-auto">Auto</span>
+                      System-assigned bag
+                    </span>
+                  </div>
+                    
                   {bag.items?.length === 0 ? (
                     <p className="info-text">No items assigned to this bag.</p>
                   ) : (
@@ -290,9 +302,21 @@ function TripResultsPage() {
                       {bag.items.map((item, index) => (
                         <div
                           key={`${bag.id}-${item.tripItemId || item.itemId || index}`}
-                          className="trip-results-distribution-chip"
+                          className="trip-results-distribution-chip trip-results-distribution-chip-rich"
                         >
-                          {item.name} × {item.quantity}
+                          <span className="trip-results-distribution-chip-name">
+                            {item.name} × {item.quantity}
+                          </span>
+
+                          <span
+                            className={`trip-results-distribution-chip-badge ${
+                              item.assignmentMode === "manual"
+                                ? "chip-badge-manual"
+                                : "chip-badge-auto"
+                            }`}
+                          >
+                            {item.assignmentMode === "manual" ? "Manual" : "Auto"}
+                          </span>
                         </div>
                       ))}
                     </div>
