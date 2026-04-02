@@ -12,14 +12,14 @@ const {
 } = require("../controllers/tripSuitcaseController");
 
 // old single-suitcase compatibility
-router.get("/trips/:tripId/suitcase", protect, getTripSuitcase);
-router.post("/trips/:tripId/suitcase", protect, createTripSuitcase);
-router.put("/trips/:tripId/suitcase", protect, updateTripSuitcase);
+router.get("/:tripId/suitcase", protect, getTripSuitcase);
+router.post("/:tripId/suitcase", protect, createTripSuitcase);
+router.put("/:tripId/suitcase", protect, updateTripSuitcase);
 
 // new multi-suitcase routes
-router.get("/trips/:tripId/suitcases", protect, getTripSuitcases);
-router.post("/trips/:tripId/suitcases", protect, createTripSuitcaseByList);
-router.put("/trips/:tripId/suitcases/:suitcaseId", protect, updateTripSuitcaseById);
-router.delete("/trips/:tripId/suitcases/:suitcaseId", protect, deleteTripSuitcaseById);
+router.get("/:tripId/suitcases", protect, getTripSuitcases);
+router.post("/:tripId/suitcases", protect, createTripSuitcaseByList);
+router.put("/:tripId/suitcases/:suitcaseId", protect, updateTripSuitcaseById);
+router.delete("/:tripId/suitcases/:suitcaseId", protect, deleteTripSuitcaseById);
 
 module.exports = router;
