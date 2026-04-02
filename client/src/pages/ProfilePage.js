@@ -18,6 +18,7 @@ function ProfilePage() {
     gender: "",
     defaultSize: "",
     travelStyle: "casual",
+    packingMode: "balanced",
     preferredSuitcaseName: "",
     notes: "",
   });
@@ -37,6 +38,7 @@ function ProfilePage() {
           gender: response.data.profile?.gender || "",
           defaultSize: response.data.profile?.defaultSize || "",
           travelStyle: response.data.profile?.travelStyle || "casual",
+          packingMode: response.data.profile?.packingMode || "balanced",
           preferredSuitcaseName:
             response.data.profile?.preferredSuitcaseName || "",
           notes: response.data.profile?.notes || "",
