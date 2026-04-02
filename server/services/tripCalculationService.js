@@ -1,4 +1,4 @@
-import {enrichItemWithRules} from "./packingRulesEngine.js";
+import { enrichItemWithRules } from "./packingRulesEngine.js";
 
 const getPackingPriority = (item) => {
     const name = (item.name || "").toLowerCase();
@@ -674,4 +674,4 @@ const getPackingPriority = (item) => {
     };
   };
   
-  module.exports = { calculateTripResult };
+  export{ calculateTripResult };

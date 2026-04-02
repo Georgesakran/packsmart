@@ -312,4 +312,4 @@ if (tripTier === "very_short") {
   
 };
 
-module.exports = { buildSuggestionRules };
+export{ buildSuggestionRules };
