@@ -14,6 +14,7 @@ const getProfile = (req, res) => {
         up.default_size,
         up.travel_style,
         up.preferred_suitcase_name,
+        up.packing_mode,
         up.notes
       FROM users u
       LEFT JOIN user_profiles up ON u.id = up.user_id
@@ -45,6 +46,7 @@ const getProfile = (req, res) => {
           defaultSize: profile.default_size || "",
           travelStyle: profile.travel_style || "casual",
           preferredSuitcaseName: profile.preferred_suitcase_name || "",
+          packingMode: profile.packing_mode || "balanced",
           notes: profile.notes || "",
         },
       });
@@ -65,6 +67,7 @@ const updateProfile = (req, res) => {
       defaultSize,
       travelStyle,
       preferredSuitcaseName,
+      packingMode,
       notes,
     } = req.body;
 
@@ -107,6 +110,7 @@ const updateProfile = (req, res) => {
               default_size = ?,
               travel_style = ?,
               preferred_suitcase_name = ?,
+              packing_mode = ?,
               notes = ?
             WHERE user_id = ?
           `;
@@ -118,6 +122,7 @@ const updateProfile = (req, res) => {
               defaultSize || null,
               travelStyle || "casual",
               preferredSuitcaseName || null,
+              packingMode || "balanced",
               notes || null,
               userId,
             ],
@@ -140,6 +145,7 @@ const updateProfile = (req, res) => {
               default_size,
               travel_style,
               preferred_suitcase_name,
+              packing_mode,
               notes
             )
             VALUES (?, ?, ?, ?, ?, ?)
@@ -153,6 +159,7 @@ const updateProfile = (req, res) => {
               defaultSize || null,
               travelStyle || "casual",
               preferredSuitcaseName || null,
+              packingMode || "balanced",
               notes || null,
             ],
             (insertErr) => {
