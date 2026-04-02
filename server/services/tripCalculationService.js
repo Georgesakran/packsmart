@@ -526,11 +526,148 @@ const getPackingPriority = (item) => {
   };
 
 
+  const buildItemSubstitutionSuggestions = ({
+    items,
+    totals,
+    weatherType = "mixed",
+    packingMode = "balanced",
+  }) => {
+    const suggestions = [];
+  
+    const byName = (name) =>
+      items.find((item) => (item.name || "").toLowerCase() === name.toLowerCase());
+  
+    const tShirt = byName("T-shirt");
+    const shirt = byName("Shirt");
+    const jeans = byName("Jeans");
+    const pants = byName("Pants");
+    const shorts = byName("Shorts");
+    const hoodie = byName("Hoodie");
+    const jacket = byName("Jacket");
+    const sneakers = byName("Sneakers");
+    const toiletryBag = byName("Toiletry Bag");
+  
+    const hasPressure =
+      !totals.overallFits ||
+      totals.usedCapacityPercent >= 85 ||
+      totals.weightFits === false;
+  
+    if (!hasPressure) {
+      return suggestions;
+    }
+  
+    if (weatherType === "hot" && jacket) {
+      suggestions.push({
+        type: "replace",
+        fromItem: "Jacket",
+        toItem: "Hoodie",
+        reason:
+          "A hoodie may be enough for this trip while using less space than a jacket.",
+      });
+    }
+  
+    if (weatherType === "hot" && jeans && shorts) {
+      suggestions.push({
+        type: "replace",
+        fromItem: "Jeans",
+        toItem: "Shorts",
+        reason:
+          "Shorts may be a lighter option than jeans for a hot-weather trip.",
+      });
+    }
+  
+    if (weatherType === "cold" && shorts) {
+      suggestions.push({
+        type: "replace",
+        fromItem: "Shorts",
+        toItem: "Pants",
+        reason:
+          "Pants may be more practical than shorts for a colder trip.",
+      });
+    }
+  
+    if (tShirt && Number(tShirt.quantity) >= 4) {
+      suggestions.push({
+        type: "reduce",
+        itemName: "T-shirt",
+        fromQuantity: Number(tShirt.quantity),
+        toQuantity: Math.max(1, Number(tShirt.quantity) - 1),
+        reason:
+          "Reducing one top may free space without affecting trip coverage too much.",
+      });
+    }
+  
+    if (shirt && Number(shirt.quantity) >= 4) {
+      suggestions.push({
+        type: "reduce",
+        itemName: "Shirt",
+        fromQuantity: Number(shirt.quantity),
+        toQuantity: Math.max(1, Number(shirt.quantity) - 1),
+        reason:
+          "Reducing one shirt may improve packing efficiency while keeping enough formal coverage.",
+      });
+    }
+  
+    if (pants && Number(pants.quantity) >= 3) {
+      suggestions.push({
+        type: "reduce",
+        itemName: "Pants",
+        fromQuantity: Number(pants.quantity),
+        toQuantity: Math.max(1, Number(pants.quantity) - 1),
+        reason:
+          "Reducing one pair of pants may lower bulk and weight with limited impact.",
+      });
+    }
+  
+    if (jeans && Number(jeans.quantity) >= 3) {
+      suggestions.push({
+        type: "reduce",
+        itemName: "Jeans",
+        fromQuantity: Number(jeans.quantity),
+        toQuantity: Math.max(1, Number(jeans.quantity) - 1),
+        reason:
+          "Reducing one pair of jeans may save both space and weight.",
+      });
+    }
+  
+    if (hoodie && jacket && weatherType === "mixed") {
+      suggestions.push({
+        type: "simplify",
+        fromItem: "Jacket + Hoodie",
+        toItem: "One flexible outer layer",
+        reason:
+          "A single versatile layer may be enough for mixed weather while reducing bulk.",
+      });
+    }
+  
+    if (sneakers && Number(sneakers.quantity) > 1) {
+      suggestions.push({
+        type: "reduce",
+        itemName: "Sneakers",
+        fromQuantity: Number(sneakers.quantity),
+        toQuantity: 1,
+        reason:
+          "Keeping one pair of shoes may significantly reduce space pressure.",
+      });
+    }
+  
+    if (toiletryBag && packingMode === "light") {
+      suggestions.push({
+        type: "simplify",
+        fromItem: "Toiletry Bag",
+        toItem: "Smaller essentials-only toiletry setup",
+        reason:
+          "A smaller essentials-only toiletry setup may better fit a light packing mode.",
+      });
+    }
+  
+    return suggestions.slice(0, 6);
+  };
 
 
 
 
-  const calculateTripResult = ({ suitcases, tripItems, sizeMultipliers }) => {
+  const calculateTripResult = ({ suitcases, tripItems, sizeMultipliers, tripMeta = {} }) => {
     const totalAvailableVolumeCm3 = suitcases.reduce(
       (sum, bag) => sum + Number(bag.volume_cm3 || 0),
       0
@@ -654,6 +791,13 @@ const getPackingPriority = (item) => {
     const bagDistribution = buildBagDistribution(detailedItems, suitcases);
     const bagRebalancingSuggestions =buildBagRebalancingSuggestions(bagDistribution);
 
+    const itemSubstitutionSuggestions = buildItemSubstitutionSuggestions({
+      items: detailedItems,
+      totals,
+      weatherType: tripMeta.weatherType || "mixed",
+      packingMode: tripMeta.packingMode || "balanced",
+    });
+
     return {
       totals,
       items: detailedItems,
@@ -671,6 +815,7 @@ const getPackingPriority = (item) => {
       })),
       bagDistribution,
       bagRebalancingSuggestions,
+      itemSubstitutionSuggestions,
     };
   };
   

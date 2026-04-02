@@ -79,16 +79,38 @@ const calculateTrip = async (req, res) => {
           });
         }
 
-        db.query(sizesQuery, (sizesErr, sizeResults) => {
+        db.query(sizesQuery, async (sizesErr, sizeResults) => {
           if (sizesErr) {
             console.error("Calculate trip sizes error:", sizesErr.message);
             return res.status(500).json({ message: "Server error" });
           }
 
+          const profileRows = await new Promise((resolve, reject) => {
+            db.query(
+              `
+              SELECT packing_mode
+              FROM user_profiles
+              WHERE user_id = ?
+              LIMIT 1
+              `,
+              [userId],
+              (err, results) => {
+                if (err) return reject(err);
+                resolve(results);
+              }
+            );
+          });
+          
+          const userProfile = profileRows[0] || null;
+          
           const calculated = calculateTripResult({
             suitcases,
             tripItems: tripItemsResults,
             sizeMultipliers: sizeResults,
+            tripMeta: {
+              weatherType: trip.weather_type,
+              packingMode: userProfile?.packing_mode || "balanced",
+            },
           });
 
           const upsertQuery = `
@@ -107,7 +129,8 @@ const calculateTrip = async (req, res) => {
               advice_json,
               smart_adjustments_json,
               bag_distribution_json,
-              bag_rebalancing_suggestions_json
+              bag_rebalancing_suggestions_json,
+              item_substitution_suggestions_json
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
@@ -125,7 +148,8 @@ const calculateTrip = async (req, res) => {
               updated_at = CURRENT_TIMESTAMP,
               smart_adjustments_json = VALUES(smart_adjustments_json),
               bag_distribution_json = VALUES(bag_distribution_json),
-              bag_rebalancing_suggestions_json = VALUES(bag_rebalancing_suggestions_json)
+              bag_rebalancing_suggestions_json = VALUES(bag_rebalancing_suggestions_json),
+              item_substitution_suggestions_json = VALUES(item_substitution_suggestions_json),
           `;
 
           db.query(
@@ -146,6 +170,7 @@ const calculateTrip = async (req, res) => {
               JSON.stringify(calculated.smartAdjustments),
               JSON.stringify(calculated.bagDistribution),
               JSON.stringify(calculated.bagRebalancingSuggestions),
+              JSON.stringify(calculated.itemSubstitutionSuggestions),
 
             ],
             (saveErr) => {
@@ -178,6 +203,7 @@ const calculateTrip = async (req, res) => {
                 smartAdjustments: calculated.smartAdjustments,
                 bagDistribution: calculated.bagDistribution,
                 bagRebalancingSuggestions: calculated.bagRebalancingSuggestions,
+                itemSubstitutionSuggestions: calculated.itemSubstitutionSuggestions,
               });
             }
           );
@@ -263,6 +289,10 @@ const getTripResults = async (req, res) => {
           result.bag_rebalancing_suggestions_json,
           []
         );
+        const itemSubstitutionSuggestions = parseMaybeJson(
+          result.item_substitution_suggestions_json,
+          []
+        );
 
         return res.status(200).json({
           trip: {
@@ -295,6 +325,7 @@ const getTripResults = async (req, res) => {
           smartAdjustments,
           bagDistribution,
           bagRebalancingSuggestions,
+          itemSubstitutionSuggestions,
         });
       });
     });
