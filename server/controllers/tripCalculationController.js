@@ -106,7 +106,8 @@ const calculateTrip = async (req, res) => {
               layout_json,
               advice_json,
               smart_adjustments_json,
-              bag_distribution_json
+              bag_distribution_json,
+              bag_rebalancing_suggestions_json,
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
@@ -123,7 +124,8 @@ const calculateTrip = async (req, res) => {
               advice_json = VALUES(advice_json),
               updated_at = CURRENT_TIMESTAMP,
               smart_adjustments_json = VALUES(smart_adjustments_json),
-              bag_distribution_json = VALUES(bag_distribution_json)
+              bag_distribution_json = VALUES(bag_distribution_json),
+              bag_rebalancing_suggestions_json = VALUES(bag_rebalancing_suggestions_json)
           `;
 
           db.query(
@@ -142,6 +144,9 @@ const calculateTrip = async (req, res) => {
               JSON.stringify(calculated.suitcaseLayout),
               JSON.stringify(calculated.advice),
               JSON.stringify(calculated.smartAdjustments),
+              JSON.stringify(calculated.bagDistribution),
+              JSON.stringify(calculated.bagRebalancingSuggestions),
+
             ],
             (saveErr) => {
               if (saveErr) {
@@ -172,6 +177,7 @@ const calculateTrip = async (req, res) => {
                 advice: calculated.advice,
                 smartAdjustments: calculated.smartAdjustments,
                 bagDistribution: calculated.bagDistribution,
+                bagRebalancingSuggestions: calculated.bagRebalancingSuggestions,
               });
             }
           );
@@ -253,7 +259,10 @@ const getTripResults = async (req, res) => {
           optimizationTips: [],
         });
         const bagDistribution = parseMaybeJson(result.bag_distribution_json, []);
-
+        const bagRebalancingSuggestions = parseMaybeJson(
+          result.bag_rebalancing_suggestions_json,
+          []
+        );
 
         return res.status(200).json({
           trip: {
@@ -285,6 +294,7 @@ const getTripResults = async (req, res) => {
           calculatedAt: result.calculated_at,
           smartAdjustments,
           bagDistribution,
+          bagRebalancingSuggestions,
         });
       });
     });

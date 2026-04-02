@@ -411,6 +411,93 @@ const getPackingPriority = (item) => {
   };
 
 
+  const isBagOverloadedOrTight = (bag) => {
+    return (
+      !bag.volumeFits ||
+      !bag.weightFits ||
+      bag.usedCapacityPercent >= 85
+    );
+  };
+  
+  const isMoveCandidate = (item) => {
+    const category = (item.category || "").toLowerCase();
+    const behavior = (item.packBehavior || "").toLowerCase();
+    const name = (item.name || "").toLowerCase();
+  
+    if (category === "tech" || category === "accessories") return true;
+    if (name.includes("charger") || name.includes("toiletry")) return true;
+    if (behavior === "foldable" || behavior === "compressible") return true;
+  
+    return false;
+  };
+  
+  const buildBagRebalancingSuggestions = (bagDistribution) => {
+    const suggestions = [];
+  
+    const overloadedBags = bagDistribution.filter(isBagOverloadedOrTight);
+    const targetBags = bagDistribution.filter(
+      (bag) =>
+        bag.volumeFits &&
+        bag.weightFits &&
+        bag.usedCapacityPercent < 75
+    );
+  
+    for (const sourceBag of overloadedBags) {
+      const movableItems = (sourceBag.items || [])
+        .filter(isMoveCandidate)
+        .sort((a, b) => {
+          const aScore = Number(a.finalVolumeCm3 || 0) + Number(a.finalWeightG || 0) / 10;
+          const bScore = Number(b.finalVolumeCm3 || 0) + Number(b.finalWeightG || 0) / 10;
+          return bScore - aScore;
+        });
+  
+      for (const item of movableItems) {
+        const targetBag = targetBags.find((bag) => {
+          if (bag.id === sourceBag.id) return false;
+  
+          const hasEnoughVolume =
+            Number(bag.remainingVolumeCm3 || 0) >= Number(item.finalVolumeCm3 || 0);
+  
+          const hasEnoughWeight =
+            Number(bag.remainingWeightG || 0) >= Number(item.finalWeightG || 0);
+  
+          return hasEnoughVolume && hasEnoughWeight;
+        });
+  
+        if (!targetBag) continue;
+  
+        suggestions.push({
+          fromBag: {
+            id: sourceBag.id,
+            name: sourceBag.name,
+            bagRole: sourceBag.bagRole,
+          },
+          toBag: {
+            id: targetBag.id,
+            name: targetBag.name,
+            bagRole: targetBag.bagRole,
+          },
+          itemName: item.name,
+          quantity: item.quantity,
+          reason:
+            !sourceBag.volumeFits && !sourceBag.weightFits
+              ? "This move may reduce both volume and weight pressure on the source bag."
+              : !sourceBag.volumeFits
+              ? "This move may reduce volume pressure on the source bag."
+              : !sourceBag.weightFits
+              ? "This move may reduce weight pressure on the source bag."
+              : "This move may improve balance across your trip bags.",
+        });
+  
+        if (suggestions.length >= 5) break;
+      }
+  
+      if (suggestions.length >= 5) break;
+    }
+  
+    return suggestions;
+  };
+
 
 
 
@@ -536,8 +623,9 @@ const getPackingPriority = (item) => {
       totals
     );
 
-    const buildBagDistribution = buildBagDistribution(detailedItems, suitcases);
-  
+    const bagDistribution = buildBagDistribution(detailedItems, suitcases);
+    const bagRebalancingSuggestions =buildBagRebalancingSuggestions(bagDistribution);
+
     return {
       totals,
       items: detailedItems,
@@ -552,8 +640,9 @@ const getPackingPriority = (item) => {
         isPrimary: !!bag.is_primary,
         volumeCm3: Number(bag.volume_cm3),
         maxWeightKg: Number(bag.max_weight_kg),
-        buildBagDistribution,
       })),
+      bagDistribution,
+      bagRebalancingSuggestions,
     };
   };
   

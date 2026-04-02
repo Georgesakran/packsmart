@@ -79,7 +79,8 @@ function TripResultsPage() {
     packingOrder = [],
     suitcaseLayout = {},
     advice = [],
-    bagDistribution,
+    bagDistribution = [],
+    bagRebalancingSuggestions = [],
     smartAdjustments = {
       mainConstraint: "none",
       warnings: [],
@@ -297,6 +298,58 @@ function TripResultsPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Rebalancing Suggestions</h2>
+            <p className="info-text">
+              Suggested moves to improve balance across your trip bags.
+            </p>
+          </div>
+        </div>
+
+        {bagRebalancingSuggestions.length === 0 ? (
+          <p className="info-text">
+            No rebalancing suggestions are needed for this result.
+          </p>
+        ) : (
+          <div className="trip-results-rebalance-list">
+            {bagRebalancingSuggestions.map((suggestion, index) => (
+              <div
+                key={`rebalance-${index}`}
+                className="trip-results-rebalance-card"
+              >
+                <div className="trip-results-rebalance-top">
+                  <h3 className="trip-results-rebalance-title">
+                    Move {suggestion.itemName} × {suggestion.quantity}
+                  </h3>
+                </div>
+
+                <div className="trip-results-rebalance-flow">
+                  <div className="trip-results-rebalance-bag">
+                    <span className="trip-results-rebalance-label">From</span>
+                    <strong>{suggestion.fromBag?.name}</strong>
+                    <span>{suggestion.fromBag?.bagRole}</span>
+                  </div>
+
+                  <div className="trip-results-rebalance-arrow">→</div>
+
+                  <div className="trip-results-rebalance-bag">
+                    <span className="trip-results-rebalance-label">To</span>
+                    <strong>{suggestion.toBag?.name}</strong>
+                    <span>{suggestion.toBag?.bagRole}</span>
+                  </div>
+                </div>
+
+                <p className="trip-results-rebalance-reason">
+                  {suggestion.reason}
+                </p>
               </div>
             ))}
           </div>
