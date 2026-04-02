@@ -726,6 +726,108 @@
   margin-bottom: 6px;
 }
 
+.trip-command-center {
+  border: 1px solid #dbeafe;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.trip-command-center-header {
+  margin-bottom: 18px;
+}
+
+.trip-command-center-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.trip-command-center-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.trip-command-center-card-full {
+  grid-column: 1 / -1;
+}
+
+.trip-command-center-label {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.trip-command-center-value {
+  display: block;
+  font-size: 22px;
+  margin-bottom: 10px;
+  text-transform: capitalize;
+}
+
+.trip-command-center-text {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.command-status-good {
+  color: #166534;
+}
+
+.command-status-warning {
+  color: #92400e;
+}
+
+.command-status-danger {
+  color: #b91c1c;
+}
+
+.command-status-neutral {
+  color: #0f172a;
+}
+
+.trip-command-center-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.trip-results-section-card {
+  margin-top: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.trip-results-section-header {
+  margin-bottom: 18px;
+}
+
+.trip-results-card-title {
+  letter-spacing: -0.02em;
+}
+
+.trip-results-hero-meta-item {
+  min-width: 140px;
+}
+
+.trip-results-hero-meta-value {
+  font-weight: 800;
+}
+
+.trip-results-stat,
+.trip-intelligence-card,
+.trip-explainability-card,
+.trip-results-smart-box,
+.trip-results-bag-card,
+.trip-results-distribution-card,
+.trip-results-rebalance-card,
+.trip-results-substitution-card,
+.trip-command-center-card {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
 @media (max-width: 768px) {
   .trip-results-rebalance-flow {
     flex-direction: column;
@@ -777,5 +879,16 @@
 
   .trip-explainability-priority-row {
     grid-template-columns: 1fr;
+  }
+  .trip-command-center-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-command-center-card-full {
+    grid-column: auto;
+  }
+
+  .trip-command-center-actions {
+    flex-direction: column;
   }
 }

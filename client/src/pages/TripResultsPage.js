@@ -189,6 +189,54 @@ function TripResultsPage() {
     return "The current result looks stable with no major correction needed.";
   };
 
+  const getCommandCenterStatus = () => {
+    if (!totals) return "Unknown";
+    if (!totals.overallFits) return "Needs Fixes";
+    if (totals.usedCapacityPercent >= 85) return "Tight";
+    return "Ready";
+  };
+  
+  const getTopIssue = () => {
+    if (smartAdjustments?.mainConstraint && smartAdjustments.mainConstraint !== "none") {
+      return smartAdjustments.mainConstraint;
+    }
+  
+    if (bagRebalancingSuggestions?.length > 0) {
+      return "bag balance";
+    }
+  
+    return "no major issue";
+  };
+  
+  const getTopActionLabel = () => {
+    if (bagRebalancingSuggestions?.length > 0) {
+      const first = bagRebalancingSuggestions[0];
+      return `Move ${first.itemName} to ${first.toBag?.name}`;
+    }
+  
+    if (itemSubstitutionSuggestions?.length > 0) {
+      const first = itemSubstitutionSuggestions[0];
+  
+      if (first.type === "replace") {
+        return `Replace ${first.fromItem} with ${first.toItem}`;
+      }
+  
+      if (first.type === "reduce") {
+        return `Reduce ${first.itemName} to ${first.toQuantity}`;
+      }
+  
+      if (first.type === "simplify") {
+        return `Simplify ${first.fromItem}`;
+      }
+    }
+  
+    if (smartAdjustments?.adjustments?.length > 0) {
+      return smartAdjustments.adjustments[0];
+    }
+  
+    return "No urgent action needed";
+  };
+
   return (
     <div className="page-container">
       <div className="trip-results-hero card">
@@ -245,7 +293,81 @@ function TripResultsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-command-center" style={{ marginTop: "20px" }}>
+        <div className="trip-command-center-header">
+          <div>
+            <h2 className="trip-results-card-title">Packing Assistant Command Center</h2>
+            <p className="info-text">
+              Your most important packing signals and next actions in one place.
+            </p>
+          </div>
+        </div>
+
+        <div className="trip-command-center-grid">
+          <div className="trip-command-center-card">
+            <span className="trip-command-center-label">Overall Status</span>
+            <strong
+              className={`trip-command-center-value ${
+                getCommandCenterStatus() === "Ready"
+                  ? "command-status-good"
+                  : getCommandCenterStatus() === "Tight"
+                  ? "command-status-warning"
+                  : "command-status-danger"
+              }`}
+            >
+              {getCommandCenterStatus()}
+            </strong>
+            <p className="trip-command-center-text">
+              Based on overall fit, packing pressure, and total used capacity.
+            </p>
+          </div>
+
+          <div className="trip-command-center-card">
+            <span className="trip-command-center-label">Top Issue</span>
+            <strong className="trip-command-center-value command-status-neutral">
+              {getTopIssue()}
+            </strong>
+            <p className="trip-command-center-text">
+              The biggest current problem or constraint in this result.
+            </p>
+          </div>
+
+          <div className="trip-command-center-card trip-command-center-card-full">
+            <span className="trip-command-center-label">Top Action</span>
+            <strong className="trip-command-center-value command-status-neutral">
+              {getTopActionLabel()}
+            </strong>
+            <p className="trip-command-center-text">
+              The most useful next move based on your current packing setup.
+            </p>
+          </div>
+        </div>
+
+        <div className="trip-command-center-actions">
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/items`)}
+          >
+            Manage Items
+          </button>
+
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/suitcase`)}
+          >
+            Manage Suitcases
+          </button>
+
+          <button
+            className="primary-btn"
+            onClick={() => navigate(`/trips/${id}`)}
+          >
+            Back to Trip
+          </button>
+        </div>
+      </div>
+
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Quick Actions</h2>
@@ -286,7 +408,7 @@ function TripResultsPage() {
         </div>
       </div>
       
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Trip Intelligence Summary</h2>
@@ -341,7 +463,7 @@ function TripResultsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Why This Result Happened</h2>
@@ -420,7 +542,7 @@ function TripResultsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Trip Bags</h2>
@@ -454,7 +576,7 @@ function TripResultsPage() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Bag-by-Bag Distribution</h2>
@@ -572,7 +694,7 @@ function TripResultsPage() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Rebalancing Suggestions</h2>
@@ -624,7 +746,7 @@ function TripResultsPage() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <div className="trip-results-actions-header">
           <div>
             <h2 className="trip-results-card-title">Item Substitution Suggestions</h2>
@@ -687,7 +809,7 @@ function TripResultsPage() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <h2 className="trip-results-card-title">Summary</h2>
         <div className="card" style={{ marginTop: "20px" }}>
           <div className="trip-results-smart-header">
@@ -824,7 +946,7 @@ function TripResultsPage() {
 
 
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <h2 className="trip-results-card-title">Suitcase Layout</h2>
 
         <div className="trip-results-layout-grid">
@@ -865,7 +987,7 @@ function TripResultsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <h2 className="trip-results-card-title">Recommended Packing Order</h2>
 
         {packingOrder.length === 0 ? (
@@ -890,7 +1012,7 @@ function TripResultsPage() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card trip-results-section-card">
         <h2 className="trip-results-card-title">Recommended Advice</h2>
 
         {advice.length === 0 ? (
