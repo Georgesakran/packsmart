@@ -1,19 +1,28 @@
 const db = require("../config/db");
 
+const queryAsync = (query, values = []) =>
+  new Promise((resolve, reject) => {
+    db.query(query, values, (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
+    });
+  });
+
 const getOwnedTrip = (tripId, userId) => {
   return new Promise((resolve, reject) => {
-    const query = `
-      SELECT id, user_id
+    db.query(
+      `
+      SELECT *
       FROM trips
       WHERE id = ? AND user_id = ?
       LIMIT 1
-    `;
-
-    db.query(query, [tripId, userId], (err, results) => {
-      if (err) return reject(err);
-      if (results.length === 0) return resolve(null);
-      resolve(results[0]);
-    });
+      `,
+      [tripId, userId],
+      (err, results) => {
+        if (err) return reject(err);
+        resolve(results[0] || null);
+      }
+    );
   });
 };
 
@@ -271,9 +280,38 @@ const deleteTripItem = async (req, res) => {
   }
 };
 
+const clearTripItems = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const trip = await getOwnedTrip(tripId, userId);
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    await queryAsync(
+      `
+      DELETE FROM trip_items
+      WHERE trip_id = ?
+      `,
+      [tripId]
+    );
+
+    return res.status(200).json({
+      message: "Trip items cleared successfully",
+    });
+  } catch (error) {
+    console.error("Clear trip items error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTripItem,
   getTripItems,
   updateTripItem,
   deleteTripItem,
+  clearTripItems,
 };

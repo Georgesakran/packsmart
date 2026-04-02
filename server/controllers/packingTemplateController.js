@@ -302,6 +302,7 @@ const applyTemplateToTrip = async (req, res) => {
   try {
     const userId = req.user.id;
     const { tripId, templateId } = req.params;
+    const { replaceExisting } = req.body || {};
 
     const trip = await getOwnedTrip(tripId, userId);
     if (!trip) {
@@ -332,11 +333,21 @@ const applyTemplateToTrip = async (req, res) => {
       [tripId]
     );
 
-    if (existingTripItems.length > 0) {
+    if (existingTripItems.length > 0 && !replaceExisting) {
       return res.status(409).json({
         message:
-          "This trip already has items. Clear them first before applying a template.",
+          "This trip already has items. Clear them first or apply the template in replace mode.",
       });
+    }
+    
+    if (existingTripItems.length > 0 && replaceExisting) {
+      await queryAsync(
+        `
+        DELETE FROM trip_items
+        WHERE trip_id = ?
+        `,
+        [tripId]
+      );
     }
 
     const templateItems = await queryAsync(
@@ -390,7 +401,9 @@ const applyTemplateToTrip = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: "Packing template applied successfully",
+      message: replaceExisting
+        ? "Packing template replaced existing trip items successfully"
+        : "Packing template applied successfully",
       trip: {
         id: trip.id,
         tripName: trip.trip_name,
@@ -400,6 +413,7 @@ const applyTemplateToTrip = async (req, res) => {
         name: templates[0].name,
       },
       appliedItemsCount: templateItems.length,
+      replacedExisting: !!replaceExisting,
     });
   } catch (error) {
     console.error("Apply template to trip error:", error.message);

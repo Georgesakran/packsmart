@@ -169,7 +169,30 @@
   flex: 1;
   min-width: 240px;
 }
+.trip-items-template-actions-stack {
+  align-items: stretch;
+}
 
+.trip-items-template-warning-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.trip-items-template-button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.trip-items-list-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
 
 @media (max-width: 768px) {
   .trip-items-grid,
@@ -191,5 +214,11 @@
 
   .trip-items-template-actions .control-group {
     min-width: auto;
+  }
+
+  .trip-items-template-button-row,
+  .trip-items-list-header-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

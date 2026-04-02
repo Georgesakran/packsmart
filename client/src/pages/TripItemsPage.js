@@ -24,6 +24,8 @@ function TripItemsPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [applyingTemplate, setApplyingTemplate] = useState(false);
 
+  const [clearingItems, setClearingItems] = useState(false);
+
   const [editingItemId, setEditingItemId] = useState(null);
   const [editForm, setEditForm] = useState({
     customName: "",
@@ -298,10 +300,18 @@ function TripItemsPage() {
     }
   };
 
-  const handleApplyTemplate = async () => {
+  const handleApplyTemplate = async (replaceExisting = false) => {
     if (!selectedTemplateId) {
       setActionError("Please choose a template first.");
       return;
+    }
+  
+    if (tripItems.length > 0 && replaceExisting) {
+      const confirmed = window.confirm(
+        "This will remove the current trip items and replace them with the selected template. Continue?"
+      );
+  
+      if (!confirmed) return;
     }
   
     try {
@@ -310,12 +320,14 @@ function TripItemsPage() {
       setActionMessage("");
   
       const response = await api.post(
-        `/packing-templates/apply/${selectedTemplateId}/trips/${id}`
+        `/packing-templates/apply/${selectedTemplateId}/trips/${id}`,
+        {
+          replaceExisting,
+        }
       );
   
       setActionMessage(
-        response.data.message ||
-          "Packing template applied successfully."
+        response.data.message || "Packing template applied successfully."
       );
   
       setSelectedTemplateId("");
@@ -327,6 +339,36 @@ function TripItemsPage() {
       );
     } finally {
       setApplyingTemplate(false);
+    }
+  };
+
+  const handleClearAllItems = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to remove all items from this trip?"
+    );
+  
+    if (!confirmed) return;
+  
+    try {
+      setClearingItems(true);
+      setActionError("");
+      setActionMessage("");
+  
+      const response = await api.delete(`/trips/${id}/items`);
+  
+      setActionMessage(
+        response.data.message || "Trip items cleared successfully."
+      );
+  
+      setEditingItemId(null);
+      await loadData();
+    } catch (error) {
+      console.error("Clear trip items error:", error);
+      setActionError(
+        error?.response?.data?.message || "Failed to clear trip items."
+      );
+    } finally {
+      setClearingItems(false);
     }
   };
 
@@ -403,12 +445,8 @@ function TripItemsPage() {
           <p className="info-text">
             You do not have any packing templates yet.
           </p>
-        ) : tripItems.length > 0 ? (
-          <p className="info-text">
-            This trip already has items. Clear them first before applying a template.
-          </p>
         ) : (
-          <div className="trip-items-template-actions">
+          <div className="trip-items-template-actions trip-items-template-actions-stack">
             <div className="control-group">
               <label>Packing Template</label>
               <select
@@ -424,14 +462,42 @@ function TripItemsPage() {
               </select>
             </div>
 
-            <button
-              className="primary-btn"
-              type="button"
-              onClick={handleApplyTemplate}
-              disabled={applyingTemplate}
-            >
-              {applyingTemplate ? "Applying..." : "Apply Template"}
-            </button>
+            {tripItems.length === 0 ? (
+              <button
+                className="primary-btn"
+                type="button"
+                onClick={() => handleApplyTemplate(false)}
+                disabled={applyingTemplate}
+              >
+                {applyingTemplate ? "Applying..." : "Apply Template"}
+              </button>
+            ) : (
+              <div className="trip-items-template-warning-box">
+                <p className="info-text">
+                  This trip already has items. You can clear them or replace them with the selected template.
+                </p>
+
+                <div className="trip-items-template-button-row">
+                  <button
+                    className="secondary-btn"
+                    type="button"
+                    onClick={handleClearAllItems}
+                    disabled={clearingItems}
+                  >
+                    {clearingItems ? "Clearing..." : "Clear All Items"}
+                  </button>
+
+                  <button
+                    className="primary-btn"
+                    type="button"
+                    onClick={() => handleApplyTemplate(true)}
+                    disabled={applyingTemplate}
+                  >
+                    {applyingTemplate ? "Replacing..." : "Replace with Template"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -595,9 +661,22 @@ function TripItemsPage() {
             </p>
           </div>
 
-          <button className="secondary-btn" onClick={() => navigate(`/trips/${id}`)}>
-            Done
-          </button>
+          <div className="trip-items-list-header-actions">
+            {tripItems.length > 0 && (
+              <button
+                className="trip-delete-btn"
+                type="button"
+                onClick={handleClearAllItems}
+                disabled={clearingItems}
+              >
+                {clearingItems ? "Clearing..." : "Clear All Items"}
+              </button>
+            )}
+
+            <button className="secondary-btn" onClick={() => navigate(`/trips/${id}`)}>
+              Done
+            </button>
+          </div>
         </div>
 
         {tripItems.length === 0 ? (
