@@ -89,6 +89,56 @@ function TripResultsPage() {
     },
   } = resultData;
 
+  const getPackingHealth = () => {
+    if (!totals) return "Unknown";
+    if (totals.overallFits && totals.usedCapacityPercent <= 70) return "Comfortable";
+    if (totals.overallFits && totals.usedCapacityPercent <= 90) return "Tight";
+    return "Overloaded";
+  };
+  
+  const getBagBalanceStatus = () => {
+    if (!bagDistribution?.length) return "Unknown";
+  
+    const overloaded = bagDistribution.filter(
+      (bag) => !bag.volumeFits || !bag.weightFits || bag.usedCapacityPercent >= 90
+    ).length;
+  
+    if (overloaded === 0) return "Balanced";
+    if (overloaded === 1) return "Needs attention";
+    return "Unbalanced";
+  };
+  
+  const getEssentialCoverage = () => {
+    const essentials = [];
+    const allItems = bagDistribution.flatMap((bag) => bag.items || []);
+  
+    if (allItems.some((item) => item.name?.toLowerCase() === "underwear")) essentials.push("Underwear");
+    if (allItems.some((item) => item.name?.toLowerCase() === "socks")) essentials.push("Socks");
+    if (allItems.some((item) => item.name?.toLowerCase().includes("charger"))) essentials.push("Charger");
+    if (allItems.some((item) => item.name?.toLowerCase().includes("toiletry"))) essentials.push("Toiletry Bag");
+  
+    if (essentials.length === 4) return "Strong";
+    if (essentials.length >= 2) return "Partial";
+    return "Weak";
+  };
+  
+  const getTopActionNow = () => {
+    if (bagRebalancingSuggestions?.length > 0) {
+      const first = bagRebalancingSuggestions[0];
+      return `Move ${first.itemName} to ${first.toBag?.name}`;
+    }
+  
+    if (smartAdjustments?.adjustments?.length > 0) {
+      return smartAdjustments.adjustments[0];
+    }
+  
+    if (smartAdjustments?.optimizationTips?.length > 0) {
+      return smartAdjustments.optimizationTips[0];
+    }
+  
+    return "No urgent action needed";
+  };
+
   return (
     <div className="page-container">
       <div className="trip-results-hero card">
@@ -183,6 +233,61 @@ function TripResultsPage() {
           >
             Edit Trip
           </button>
+        </div>
+      </div>
+      
+      <div className="card" style={{ marginTop: "20px" }}>
+        <div className="trip-results-actions-header">
+          <div>
+            <h2 className="trip-results-card-title">Trip Intelligence Summary</h2>
+            <p className="info-text">
+              A quick view of the most important packing insights for this trip.
+            </p>
+          </div>
+        </div>
+
+        <div className="trip-intelligence-grid">
+          <div className="trip-intelligence-card">
+            <span className="trip-intelligence-label">Packing Health</span>
+            <strong className="trip-intelligence-value">{getPackingHealth()}</strong>
+            <p className="trip-intelligence-subtext">
+              Based on fit status and overall used capacity.
+            </p>
+          </div>
+
+          <div className="trip-intelligence-card">
+            <span className="trip-intelligence-label">Main Constraint</span>
+            <strong className="trip-intelligence-value">
+              {smartAdjustments?.mainConstraint || "none"}
+            </strong>
+            <p className="trip-intelligence-subtext">
+              The main pressure point in your current packing setup.
+            </p>
+          </div>
+
+          <div className="trip-intelligence-card">
+            <span className="trip-intelligence-label">Bag Balance</span>
+            <strong className="trip-intelligence-value">{getBagBalanceStatus()}</strong>
+            <p className="trip-intelligence-subtext">
+              Indicates how evenly your bags are currently packed.
+            </p>
+          </div>
+
+          <div className="trip-intelligence-card">
+            <span className="trip-intelligence-label">Essential Coverage</span>
+            <strong className="trip-intelligence-value">{getEssentialCoverage()}</strong>
+            <p className="trip-intelligence-subtext">
+              Based on whether key must-pack items are included.
+            </p>
+          </div>
+
+          <div className="trip-intelligence-card trip-intelligence-card-full">
+            <span className="trip-intelligence-label">Top Action Now</span>
+            <strong className="trip-intelligence-value">{getTopActionNow()}</strong>
+            <p className="trip-intelligence-subtext">
+              The single most useful next move based on this result.
+            </p>
+          </div>
         </div>
       </div>
 
