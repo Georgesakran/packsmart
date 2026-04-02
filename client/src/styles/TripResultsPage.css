@@ -729,6 +729,7 @@
 .trip-command-center {
   border: 1px solid #dbeafe;
   background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.06);
 }
 
 .trip-command-center-header {
@@ -828,6 +829,13 @@
 .trip-command-center-card {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
+
+.trip-results-bag-fit-badge,
+.trip-results-substitution-type,
+.trip-results-distribution-chip-badge,
+.trip-results-constraint-badge {
+  letter-spacing: 0.01em;
+}
 @media (max-width: 768px) {
   .trip-results-rebalance-flow {
     flex-direction: column;
@@ -836,6 +844,31 @@
 
   .trip-results-rebalance-arrow {
     align-self: center;
+  }
+
+  .trip-results-section-card {
+    padding: 16px;
+  }
+
+  .trip-results-card-title {
+    font-size: 20px;
+  }
+
+  .trip-results-hero-meta-item {
+    min-width: 120px;
+  }
+
+  .trip-command-center-value,
+  .trip-intelligence-value,
+  .trip-explainability-value {
+    font-size: 18px;
+  }
+
+  .trip-results-distribution-card,
+  .trip-results-rebalance-card,
+  .trip-results-substitution-card,
+  .trip-results-bag-card {
+    padding: 14px;
   }
 }
 
