@@ -449,7 +449,7 @@ function TripDetailsPage() {
 
             <button
               className="secondary-btn"
-              onClick={() => navigate(`/trips/${id}/suitcase`)}
+              onClick={() => navigate(`/trips/${id}/suitcases`)}
             >
               {suitcases.length > 0 ? "Manage Suitcases" : "Add Suitcases"}
             </button>
