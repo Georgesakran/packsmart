@@ -292,7 +292,15 @@ const getTripResults = async (req, res) => {
           result.item_substitution_suggestions_json,
           []
         );
-
+        const totalAvailableVolumeCm3 = suitcaseResults.reduce(
+          (sum, bag) => sum + Number(bag.volume_cm3 || 0),
+          0
+        );
+        
+        const totalAllowedWeightG = suitcaseResults.reduce(
+          (sum, bag) => sum + Number(bag.max_weight_kg || 0) * 1000,
+          0
+        );
         return res.status(200).json({
           trip: {
             id: trip.id,
@@ -316,12 +324,8 @@ const getTripResults = async (req, res) => {
             volumeFits: !!result.volume_fits,
             weightFits: !!result.weight_fits,
             overallFits: !!result.overall_fits,
-            totalAvailableVolumeCm3: result.total_available_volume_cm3
-              ? Number(result.total_available_volume_cm3)
-              : null,
-            totalAllowedWeightG: result.total_allowed_weight_g
-              ? Number(result.total_allowed_weight_g)
-              : null,
+            totalAvailableVolumeCm3,
+            totalAllowedWeightG,
           },
           packingOrder,
           suitcaseLayout,
