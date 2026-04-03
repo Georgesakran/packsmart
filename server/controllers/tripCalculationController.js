@@ -31,12 +31,12 @@ const calculateTrip = async (req, res) => {
       });
     }
 
-    const suitcaseQuery = `
-      SELECT *
-      FROM trip_suitcases
-      WHERE trip_id = ?
-      LIMIT 1
-    `;
+    const suitcasesQuery = `
+    SELECT *
+    FROM trip_suitcases
+    WHERE trip_id = ?
+    ORDER BY is_primary DESC, created_at ASC
+  `;
 
     const tripItemsQuery = `
       SELECT
@@ -53,7 +53,7 @@ const calculateTrip = async (req, res) => {
       FROM size_multipliers
     `;
 
-    db.query(suitcaseQuery, [tripId], (suitcaseErr, suitcaseResults) => {
+    db.query(suitcasesQuery, [tripId], (suitcaseErr, suitcaseResults) => {
       if (suitcaseErr) {
         console.error("Calculate trip suitcase error:", suitcaseErr.message);
         return res.status(500).json({ message: "Server error" });
@@ -114,43 +114,43 @@ const calculateTrip = async (req, res) => {
           });
 
           const upsertQuery = `
-            INSERT INTO trip_results (
-              trip_id,
-              total_volume_cm3,
-              total_weight_g,
-              weight_kg,
-              used_capacity_percent,
-              remaining_volume_cm3,
-              volume_fits,
-              weight_fits,
-              overall_fits,
-              packing_order_json,
-              layout_json,
-              advice_json,
-              smart_adjustments_json,
-              bag_distribution_json,
-              bag_rebalancing_suggestions_json,
-              item_substitution_suggestions_json
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-              total_volume_cm3 = VALUES(total_volume_cm3),
-              total_weight_g = VALUES(total_weight_g),
-              weight_kg = VALUES(weight_kg),
-              used_capacity_percent = VALUES(used_capacity_percent),
-              remaining_volume_cm3 = VALUES(remaining_volume_cm3),
-              volume_fits = VALUES(volume_fits),
-              weight_fits = VALUES(weight_fits),
-              overall_fits = VALUES(overall_fits),
-              packing_order_json = VALUES(packing_order_json),
-              layout_json = VALUES(layout_json),
-              advice_json = VALUES(advice_json),
-              updated_at = CURRENT_TIMESTAMP,
-              smart_adjustments_json = VALUES(smart_adjustments_json),
-              bag_distribution_json = VALUES(bag_distribution_json),
-              bag_rebalancing_suggestions_json = VALUES(bag_rebalancing_suggestions_json),
-              item_substitution_suggestions_json = VALUES(item_substitution_suggestions_json),
-          `;
+          INSERT INTO trip_results (
+            trip_id,
+            total_volume_cm3,
+            total_weight_g,
+            weight_kg,
+            used_capacity_percent,
+            remaining_volume_cm3,
+            volume_fits,
+            weight_fits,
+            overall_fits,
+            packing_order_json,
+            layout_json,
+            advice_json,
+            smart_adjustments_json,
+            bag_distribution_json,
+            bag_rebalancing_suggestions_json,
+            item_substitution_suggestions_json
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            total_volume_cm3 = VALUES(total_volume_cm3),
+            total_weight_g = VALUES(total_weight_g),
+            weight_kg = VALUES(weight_kg),
+            used_capacity_percent = VALUES(used_capacity_percent),
+            remaining_volume_cm3 = VALUES(remaining_volume_cm3),
+            volume_fits = VALUES(volume_fits),
+            weight_fits = VALUES(weight_fits),
+            overall_fits = VALUES(overall_fits),
+            packing_order_json = VALUES(packing_order_json),
+            layout_json = VALUES(layout_json),
+            advice_json = VALUES(advice_json),
+            smart_adjustments_json = VALUES(smart_adjustments_json),
+            bag_distribution_json = VALUES(bag_distribution_json),
+            bag_rebalancing_suggestions_json = VALUES(bag_rebalancing_suggestions_json),
+            item_substitution_suggestions_json = VALUES(item_substitution_suggestions_json),
+            updated_at = CURRENT_TIMESTAMP
+        `;
 
           db.query(
             upsertQuery,
@@ -263,7 +263,6 @@ const getTripResults = async (req, res) => {
         }
 
         const result = resultRows[0];
-        const suitcase = suitcaseResults[0] || null;
         const parseMaybeJson = (value, fallback) => {
           if (!value) return fallback;
           if (typeof value === "object") return value;
@@ -300,14 +299,14 @@ const getTripResults = async (req, res) => {
             tripName: trip.trip_name,
             destination: trip.destination,
           },
-          suitcase: suitcase
-            ? {
-                id: suitcase.id,
-                name: suitcase.name,
-                volumeCm3: Number(suitcase.volume_cm3),
-                maxWeightKg: Number(suitcase.max_weight_kg),
-              }
-            : null,
+          suitcases: suitcaseResults.map((bag) => ({
+            id: bag.id,
+            name: bag.name,
+            bagRole: bag.bag_role,
+            isPrimary: !!bag.is_primary,
+            volumeCm3: Number(bag.volume_cm3),
+            maxWeightKg: Number(bag.max_weight_kg),
+          })),
           totals: {
             totalVolumeCm3: result.total_volume_cm3,
             totalWeightG: result.total_weight_g,
@@ -317,6 +316,12 @@ const getTripResults = async (req, res) => {
             volumeFits: !!result.volume_fits,
             weightFits: !!result.weight_fits,
             overallFits: !!result.overall_fits,
+            totalAvailableVolumeCm3: result.total_available_volume_cm3
+              ? Number(result.total_available_volume_cm3)
+              : null,
+            totalAllowedWeightG: result.total_allowed_weight_g
+              ? Number(result.total_allowed_weight_g)
+              : null,
           },
           packingOrder,
           suitcaseLayout,
