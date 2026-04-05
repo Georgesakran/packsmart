@@ -161,6 +161,8 @@ const getTripItems = async (req, res) => {
           ...item,
           name: item.custom_name || item.base_item_name || "Custom Item",
           category: item.category,
+          packingStatus: item.packing_status || "pending",
+          packedAt: item.packed_at || null,
         })
       );
       
@@ -387,6 +389,122 @@ const assignTripItemToBag = async (req, res) => {
   }
 };
 
+const updateTripItemPackingStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId, itemId } = req.params;
+    const { packingStatus } = req.body;
+
+    const allowedStatuses = [
+      "pending",
+      "packed",
+      "wear_on_travel_day",
+      "skip",
+    ];
+
+    if (!allowedStatuses.includes(packingStatus)) {
+      return res.status(400).json({
+        message: "Invalid packing status",
+      });
+    }
+
+    const trip = await getOwnedTrip(tripId, userId);
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const itemRows = await queryAsync(
+      `
+      SELECT *
+      FROM trip_items
+      WHERE id = ? AND trip_id = ?
+      LIMIT 1
+      `,
+      [itemId, tripId]
+    );
+
+    if (itemRows.length === 0) {
+      return res.status(404).json({ message: "Trip item not found" });
+    }
+
+    const packedAt = packingStatus === "packed" ? new Date() : null;
+
+    await queryAsync(
+      `
+      UPDATE trip_items
+      SET packing_status = ?, packed_at = ?
+      WHERE id = ? AND trip_id = ?
+      `,
+      [packingStatus, packedAt, itemId, tripId]
+    );
+
+    return res.status(200).json({
+      message: "Trip item packing status updated successfully",
+      packingStatus,
+      packedAt,
+    });
+  } catch (error) {
+    console.error("Update trip item packing status error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getTripChecklistSummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const trip = await getOwnedTrip(tripId, userId);
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const rows = await queryAsync(
+      `
+      SELECT packing_status, COUNT(*) AS count
+      FROM trip_items
+      WHERE trip_id = ?
+      GROUP BY packing_status
+      `,
+      [tripId]
+    );
+
+    const summary = {
+      totalItems: 0,
+      pending: 0,
+      packed: 0,
+      wearOnTravelDay: 0,
+      skip: 0,
+      completionPercent: 0,
+    };
+
+    rows.forEach((row) => {
+      const count = Number(row.count || 0);
+      summary.totalItems += count;
+
+      if (row.packing_status === "pending") summary.pending = count;
+      if (row.packing_status === "packed") summary.packed = count;
+      if (row.packing_status === "wear_on_travel_day") summary.wearOnTravelDay = count;
+      if (row.packing_status === "skip") summary.skip = count;
+    });
+
+    const completedCount =
+      summary.packed + summary.wearOnTravelDay + summary.skip;
+
+    summary.completionPercent =
+      summary.totalItems > 0
+        ? Math.round((completedCount / summary.totalItems) * 100)
+        : 0;
+
+    return res.status(200).json(summary);
+  } catch (error) {
+    console.error("Get trip checklist summary error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTripItem,
   getTripItems,
@@ -394,4 +512,6 @@ module.exports = {
   deleteTripItem,
   clearTripItems,
   assignTripItemToBag,
+  updateTripItemPackingStatus,
+  getTripChecklistSummary,
 };
