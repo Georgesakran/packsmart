@@ -364,9 +364,7 @@ function TripDetailsPage() {
           <button className="secondary-btn" onClick={() => navigate("/trips")}>
             Back to Trips
           </button>
-          <button className="secondary-btn" onClick={() => navigate(`/trips/${id}/checklist`)}>
-            Start Packing Checklist
-          </button>    
+ 
         </div>
 
         <div className="trip-actions-grid">
@@ -375,6 +373,12 @@ function TripDetailsPage() {
             onClick={() => navigate(`/trips/${id}/edit`)}
           >
             Edit Trip
+          </button>
+          <button className="secondary-btn" onClick={() => navigate(`/trips/${id}/checklist`)}>
+            Start Packing Checklist
+          </button>
+          <button className="secondary-btn" onClick={() => navigate(`/trips/${id}/travel-day`)}>
+            Travel Day Plan
           </button>
 
           <button

@@ -21,6 +21,7 @@ import ProfilePage from "./pages/ProfilePage";
 import SavedSuitcasesPage from "./pages/SavedSuitcasesPage";
 import PackingTemplatesPage from "./pages/PackingTemplatesPage";
 import TripChecklistPage from "./pages/TripChecklistPage";
+import TripTravelDayPage from "./pages/TripTravelDayPage";
 
 function App() {
   return (
@@ -140,6 +141,15 @@ function App() {
           element={
             <ProtectedRoute>
               <TripChecklistPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/trips/:id/travel-day"
+          element={
+            <ProtectedRoute>
+              <TripTravelDayPage />
             </ProtectedRoute>
           }
         />
