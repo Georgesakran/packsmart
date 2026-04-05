@@ -20,6 +20,7 @@ import EditTripPage from "./pages/EditTripPage";
 import ProfilePage from "./pages/ProfilePage";
 import SavedSuitcasesPage from "./pages/SavedSuitcasesPage";
 import PackingTemplatesPage from "./pages/PackingTemplatesPage";
+import TripChecklistPage from "./pages/TripChecklistPage";
 
 function App() {
   return (
@@ -130,6 +131,15 @@ function App() {
           element={
             <ProtectedRoute>
               <PackingTemplatesPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/trips/:id/checklist"
+          element={
+            <ProtectedRoute>
+              <TripChecklistPage />
             </ProtectedRoute>
           }
         />

@@ -382,6 +382,12 @@ function TripResultsPage() {
           >
             Back to Trip
           </button>
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/trips/${id}/checklist`)}
+          >
+            Open Checklist
+          </button>
         </div>
 
         <div className="trip-results-actions-grid">
