@@ -163,6 +163,7 @@ const getTripItems = async (req, res) => {
           category: item.category,
           packingStatus: item.packing_status || "pending",
           packedAt: item.packed_at || null,
+          travelDayMode: item.travel_day_mode || "normal",
         })
       );
       
@@ -505,6 +506,155 @@ const getTripChecklistSummary = async (req, res) => {
   }
 };
 
+const updateTripItemTravelDayMode = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId, itemId } = req.params;
+    const { travelDayMode } = req.body;
+
+    const allowedModes = [
+      "normal",
+      "wear_on_travel_day",
+      "keep_accessible",
+    ];
+
+    if (!allowedModes.includes(travelDayMode)) {
+      return res.status(400).json({
+        message: "Invalid travel day mode",
+      });
+    }
+
+    const trip = await getOwnedTrip(tripId, userId);
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const itemRows = await queryAsync(
+      `
+      SELECT *
+      FROM trip_items
+      WHERE id = ? AND trip_id = ?
+      LIMIT 1
+      `,
+      [itemId, tripId]
+    );
+
+    if (itemRows.length === 0) {
+      return res.status(404).json({ message: "Trip item not found" });
+    }
+
+    await queryAsync(
+      `
+      UPDATE trip_items
+      SET travel_day_mode = ?
+      WHERE id = ? AND trip_id = ?
+      `,
+      [travelDayMode, itemId, tripId]
+    );
+
+    return res.status(200).json({
+      message: "Trip item travel day mode updated successfully",
+      travelDayMode,
+    });
+  } catch (error) {
+    console.error("Update trip item travel day mode error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getTripTravelDaySummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const trip = await getOwnedTrip(tripId, userId);
+
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const items = await queryAsync(
+      `
+      SELECT
+        ti.*,
+        i.name AS base_item_name,
+        ts.name AS assigned_bag_name,
+        ts.bag_role AS assigned_bag_role
+      FROM trip_items ti
+      LEFT JOIN items i ON ti.item_id = i.id
+      LEFT JOIN trip_suitcases ts ON ti.assigned_bag_id = ts.id
+      WHERE ti.trip_id = ?
+      ORDER BY ti.created_at ASC
+      `,
+      [tripId]
+    );
+
+    const wearOnTravelDay = [];
+    const keepAccessible = [];
+    const normal = [];
+
+    items.forEach((item) => {
+      const normalized = {
+        id: item.id,
+        name: item.custom_name || item.base_item_name || "Custom Item",
+        quantity: Number(item.quantity || 1),
+        travelDayMode: item.travel_day_mode || "normal",
+        packingStatus: item.packing_status || "pending",
+        assignedBagName: item.assigned_bag_name || null,
+        assignedBagRole: item.assigned_bag_role || null,
+        category: item.category || null,
+      };
+
+      if (normalized.travelDayMode === "wear_on_travel_day") {
+        wearOnTravelDay.push(normalized);
+      } else if (normalized.travelDayMode === "keep_accessible") {
+        keepAccessible.push(normalized);
+      } else {
+        normal.push(normalized);
+      }
+    });
+
+    return res.status(200).json({
+      totalItems: items.length,
+      wearOnTravelDayCount: wearOnTravelDay.length,
+      keepAccessibleCount: keepAccessible.length,
+      normalCount: normal.length,
+      wearOnTravelDay,
+      keepAccessible,
+      normal,
+    });
+  } catch (error) {
+    console.error("Get trip travel day summary error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+const getSuggestedTravelDayMode = (item) => {
+  const name = (item.name || "").toLowerCase();
+  const category = (item.category || "").toLowerCase();
+
+  if (
+    name.includes("charger") ||
+    name.includes("passport") ||
+    name.includes("document") ||
+    name.includes("toiletry") ||
+    category === "tech" ||
+    category === "accessories"
+  ) {
+    return "keep_accessible";
+  }
+
+  if (
+    name.includes("hoodie") ||
+    name.includes("jacket") ||
+    name.includes("sneakers")
+  ) {
+    return "wear_on_travel_day";
+  }
+
+  return "normal";
+};
+
 module.exports = {
   createTripItem,
   getTripItems,
@@ -514,4 +664,6 @@ module.exports = {
   assignTripItemToBag,
   updateTripItemPackingStatus,
   getTripChecklistSummary,
+  updateTripItemTravelDayMode,
+  getTripTravelDaySummary,
 };

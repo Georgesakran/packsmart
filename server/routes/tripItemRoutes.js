@@ -9,7 +9,9 @@ const {
   clearTripItems,
   assignTripItemToBag,
   getTripChecklistSummary,
-  updateTripItemPackingStatus
+  updateTripItemPackingStatus,
+  updateTripItemTravelDayMode,
+  getTripTravelDaySummary,
 } = require("../controllers/tripItemController");
 
 router.post("/:tripId/items", protect, createTripItem);
@@ -20,5 +22,7 @@ router.delete("/:tripId/items", protect, clearTripItems);
 router.put("/:tripId/items/:itemId/assign-bag", protect, assignTripItemToBag);
 router.put("/:tripId/items/:itemId/packing-status",protect,updateTripItemPackingStatus);
 router.get("/:tripId/checklist-summary",protect,getTripChecklistSummary);
+router.put("/:tripId/items/:itemId/travel-day-mode",protect,updateTripItemTravelDayMode);
+router.get("/:tripId/travel-day-summary",protect,getTripTravelDaySummary);
 
 module.exports = router;
