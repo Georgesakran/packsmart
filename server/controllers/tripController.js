@@ -77,10 +77,53 @@ const getTrips = (req, res) => {
     const userId = req.user.id;
 
     const query = `
-      SELECT *
-      FROM trips
-      WHERE user_id = ?
-      ORDER BY created_at DESC
+      SELECT
+        t.*,
+
+        COUNT(DISTINCT ts.id) AS bags_count,
+        COUNT(DISTINCT ti.id) AS items_count,
+
+        CASE
+          WHEN tr.trip_id IS NOT NULL THEN 1
+          ELSE 0
+        END AS has_results,
+
+        CASE
+          WHEN tr.overall_fits = 1 THEN 1
+          ELSE 0
+        END AS overall_fits,
+
+        CASE
+          WHEN SUM(
+            CASE
+              WHEN ti.packing_status IS NOT NULL AND ti.packing_status <> 'pending'
+              THEN 1
+              ELSE 0
+            END
+          ) > 0
+          THEN 1
+          ELSE 0
+        END AS checklist_started,
+
+        CASE
+          WHEN SUM(
+            CASE
+              WHEN ti.travel_day_mode IS NOT NULL AND ti.travel_day_mode <> 'normal'
+              THEN 1
+              ELSE 0
+            END
+          ) > 0
+          THEN 1
+          ELSE 0
+        END AS travel_day_configured
+
+      FROM trips t
+      LEFT JOIN trip_suitcases ts ON ts.trip_id = t.id
+      LEFT JOIN trip_items ti ON ti.trip_id = t.id
+      LEFT JOIN trip_results tr ON tr.trip_id = t.id
+      WHERE t.user_id = ?
+      GROUP BY t.id
+      ORDER BY t.created_at DESC
     `;
 
     db.query(query, [userId], (err, results) => {
