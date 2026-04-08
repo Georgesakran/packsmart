@@ -290,10 +290,231 @@ const deleteTrip = (req, res) => {
   }
 };
 
+
+const duplicateTrip = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const tripRows = await queryAsync(
+      `
+      SELECT *
+      FROM trips
+      WHERE id = ? AND user_id = ?
+      LIMIT 1
+      `,
+      [tripId, userId]
+    );
+
+    if (tripRows.length === 0) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const originalTrip = tripRows[0];
+
+    const tripInsertResult = await queryAsync(
+      `
+      INSERT INTO trips (
+        user_id,
+        trip_name,
+        destination,
+        start_date,
+        end_date,
+        duration_days,
+        travel_type,
+        weather_type,
+        traveler_count,
+        status,
+        notes
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        userId,
+        `${originalTrip.trip_name} Copy`,
+        originalTrip.destination,
+        originalTrip.start_date,
+        originalTrip.end_date,
+        originalTrip.duration_days,
+        originalTrip.travel_type,
+        originalTrip.weather_type,
+        originalTrip.traveler_count,
+        "draft",
+        originalTrip.notes || null,
+      ]
+    );
+
+    const newTripId = tripInsertResult.insertId;
+
+    const oldBags = await queryAsync(
+      `
+      SELECT *
+      FROM trip_suitcases
+      WHERE trip_id = ?
+      ORDER BY id ASC
+      `,
+      [tripId]
+    );
+
+    const bagIdMap = {};
+
+    for (const bag of oldBags) {
+      const insertedBag = await queryAsync(
+        `
+        INSERT INTO trip_suitcases (
+          trip_id,
+          suitcase_type,
+          name,
+          volume_cm3,
+          max_weight_kg,
+          length_cm,
+          width_cm,
+          height_cm,
+          is_custom,
+          bag_role,
+          is_primary
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          newTripId,
+          bag.suitcase_type,
+          bag.name,
+          bag.volume_cm3,
+          bag.max_weight_kg,
+          bag.length_cm,
+          bag.width_cm,
+          bag.height_cm,
+          bag.is_custom,
+          bag.bag_role,
+          bag.is_primary,
+        ]
+      );
+
+      bagIdMap[bag.id] = insertedBag.insertId;
+    }
+
+    const oldItems = await queryAsync(
+      `
+      SELECT *
+      FROM trip_items
+      WHERE trip_id = ?
+      ORDER BY id ASC
+      `,
+      [tripId]
+    );
+
+    for (const item of oldItems) {
+      await queryAsync(
+        `
+        INSERT INTO trip_items (
+          trip_id,
+          item_id,
+          custom_name,
+          source_type,
+          quantity,
+          category,
+          audience,
+          size_code,
+          pack_behavior,
+          base_volume_cm3,
+          base_weight_g,
+          assigned_bag_id,
+          packing_status,
+          travel_day_mode,
+          priority,
+          remove_priority
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          newTripId,
+          item.item_id,
+          item.custom_name,
+          item.source_type,
+          item.quantity,
+          item.category,
+          item.audience,
+          item.size_code,
+          item.pack_behavior,
+          item.base_volume_cm3,
+          item.base_weight_g,
+          item.assigned_bag_id ? bagIdMap[item.assigned_bag_id] || null : null,
+          "pending",
+          "normal",
+          item.priority || "recommended",
+          item.remove_priority || "medium",
+        ]
+      );
+    }
+
+    return res.status(201).json({
+      message: "Trip duplicated successfully",
+      newTripId,
+    });
+  } catch (error) {
+    console.error("Duplicate trip error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const archiveTrip = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const result = await queryAsync(
+      `
+      UPDATE trips
+      SET status = 'archived'
+      WHERE id = ? AND user_id = ?
+      `,
+      [tripId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    return res.status(200).json({ message: "Trip archived successfully" });
+  } catch (error) {
+    console.error("Archive trip error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const unarchiveTrip = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const result = await queryAsync(
+      `
+      UPDATE trips
+      SET status = 'draft'
+      WHERE id = ? AND user_id = ?
+      `,
+      [tripId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    return res.status(200).json({ message: "Trip restored successfully" });
+  } catch (error) {
+    console.error("Unarchive trip error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTrip,
   getTrips,
   getTripById,
   updateTrip,
   deleteTrip,
+  duplicateTrip,
+  archiveTrip,
+  unarchiveTrip,
 };
