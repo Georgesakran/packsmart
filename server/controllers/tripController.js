@@ -459,55 +459,82 @@ const duplicateTrip = async (req, res) => {
   }
 };
 
-const archiveTrip = async (req, res) => {
+
+const archiveTrip = (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const tripId = id;
 
-    const result = await queryAsync(
-      `
+    console.log("archiveTrip called with:", { id, userId });
+
+    const query = `
       UPDATE trips
       SET status = 'archived'
       WHERE id = ? AND user_id = ?
-      `,
-      [tripId, userId]
-    );
+    `;
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Trip not found" });
-    }
+    db.query(query, [id, userId], (err, result) => {
+      if (err) {
+        console.error("Archive trip SQL error:", err);
+        return res.status(500).json({
+          message: "Archive trip SQL error",
+          sqlMessage: err.message,
+        });
+      }
 
-    return res.status(200).json({ message: "Trip archived successfully" });
+      console.log("Archive trip result:", result);
+
+      if (!result || result.affectedRows === 0) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      return res.status(200).json({ message: "Trip archived successfully" });
+    });
   } catch (error) {
-    console.error("Archive trip error:", error.message);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Archive trip catch error:", error);
+    return res.status(500).json({
+      message: "Archive trip catch error",
+      error: error.message,
+    });
   }
 };
 
-const unarchiveTrip = async (req, res) => {
+const unarchiveTrip = (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const tripId = id;
 
-    const result = await queryAsync(
-      `
+    console.log("unarchiveTrip called with:", { id, userId });
+
+    const query = `
       UPDATE trips
       SET status = 'draft'
       WHERE id = ? AND user_id = ?
-      `,
-      [tripId, userId]
-    );
+    `;
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Trip not found" });
-    }
+    db.query(query, [id, userId], (err, result) => {
+      if (err) {
+        console.error("Unarchive trip SQL error:", err);
+        return res.status(500).json({
+          message: "Unarchive trip SQL error",
+          sqlMessage: err.message,
+        });
+      }
 
-    return res.status(200).json({ message: "Trip restored successfully" });
+      console.log("Unarchive trip result:", result);
+
+      if (!result || result.affectedRows === 0) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      return res.status(200).json({ message: "Trip restored successfully" });
+    });
   } catch (error) {
-    console.error("Unarchive trip error:", error.message);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Unarchive trip catch error:", error);
+    return res.status(500).json({
+      message: "Unarchive trip catch error",
+      error: error.message,
+    });
   }
 };
 
