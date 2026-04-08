@@ -421,6 +421,137 @@ const applyTemplateToTrip = async (req, res) => {
   }
 };
 
+const saveTripAsTemplate = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tripId = req.params.tripId;
+    const { name, description, travelType, weatherType } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Template name is required" });
+    }
+
+    const tripQuery = `
+      SELECT *
+      FROM trips
+      WHERE id = ? AND user_id = ?
+      LIMIT 1
+    `;
+
+    db.query(tripQuery, [tripId, userId], (tripErr, tripRows) => {
+      if (tripErr) {
+        console.error("Save trip as template trip error:", tripErr.message);
+        return res.status(500).json({ message: "Server error" });
+      }
+
+      if (tripRows.length === 0) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
+      const tripItemsQuery = `
+        SELECT *
+        FROM trip_items
+        WHERE trip_id = ?
+        ORDER BY created_at ASC
+      `;
+
+      db.query(tripItemsQuery, [tripId], (itemsErr, itemRows) => {
+        if (itemsErr) {
+          console.error("Save trip as template items error:", itemsErr.message);
+          return res.status(500).json({ message: "Server error" });
+        }
+
+        if (itemRows.length === 0) {
+          return res.status(400).json({
+            message: "This trip has no items to save as template",
+          });
+        }
+
+        const createTemplateQuery = `
+          INSERT INTO packing_templates (
+            user_id,
+            name,
+            description,
+            travel_type,
+            weather_type
+          )
+          VALUES (?, ?, ?, ?, ?)
+        `;
+
+        db.query(
+          createTemplateQuery,
+          [
+            userId,
+            name.trim(),
+            description || "",
+            travelType || null,
+            weatherType || null,
+          ],
+          (templateErr, templateResult) => {
+            if (templateErr) {
+              console.error("Create template from trip error:", templateErr.message);
+              return res.status(500).json({ message: "Server error" });
+            }
+
+            const templateId = templateResult.insertId;
+
+            const values = itemRows.map((item) => [
+              templateId,
+              item.item_id || null,
+              item.custom_name || null,
+              item.source_type || "custom",
+              item.quantity || 1,
+              item.category || "custom",
+              item.audience || null,
+              item.size_code || null,
+              item.pack_behavior || null,
+              item.base_volume_cm3 || null,
+              item.base_weight_g || null,
+              item.assigned_bag_id || null,
+            ]);
+
+            const insertTemplateItemsQuery = `
+              INSERT INTO packing_template_items (
+                template_id,
+                item_id,
+                custom_name,
+                source_type,
+                quantity,
+                category,
+                audience,
+                size_code,
+                pack_behavior,
+                base_volume_cm3,
+                base_weight_g,
+                assigned_bag_id
+              )
+              VALUES ?
+            `;
+
+            db.query(insertTemplateItemsQuery, [values], (insertErr) => {
+              if (insertErr) {
+                console.error(
+                  "Insert template items from trip error:",
+                  insertErr.message
+                );
+                return res.status(500).json({ message: "Server error" });
+              }
+
+              return res.status(201).json({
+                message: "Trip saved as template successfully",
+                templateId,
+              });
+            });
+          }
+        );
+      });
+    });
+  } catch (error) {
+    console.error("Save trip as template catch error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getPackingTemplates,
   getPackingTemplateById,
@@ -428,4 +559,5 @@ module.exports = {
   updatePackingTemplate,
   deletePackingTemplate,
   applyTemplateToTrip,
+  saveTripAsTemplate,
 };

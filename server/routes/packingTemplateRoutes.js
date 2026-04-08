@@ -8,6 +8,7 @@ const {
   updatePackingTemplate,
   deletePackingTemplate,
   applyTemplateToTrip,
+  saveTripAsTemplate,
 } = require("../controllers/packingTemplateController");
 
 router.get("/", protect, getPackingTemplates);
@@ -16,5 +17,5 @@ router.post("/", protect, createPackingTemplate);
 router.put("/:id", protect, updatePackingTemplate);
 router.delete("/:id", protect, deletePackingTemplate);
 router.post("/apply/:templateId/trips/:tripId", protect, applyTemplateToTrip);
-
+router.post("/from-trip/:tripId", protect, saveTripAsTemplate);
 module.exports = router;
