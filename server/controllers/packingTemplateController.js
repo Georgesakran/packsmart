@@ -8,26 +8,31 @@ const queryAsync = (query, values = []) =>
     });
   });
 
-const getPackingTemplates = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const templates = await queryAsync(
-      `
-      SELECT *
-      FROM packing_templates
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-      `,
-      [userId]
-    );
-
-    return res.status(200).json(templates);
-  } catch (error) {
-    console.error("Get packing templates error:", error.message);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
+  const getPackingTemplates = async (req, res) => {
+    try {
+      const userId = req.user.id;
+  
+      const templates = await queryAsync(
+        `
+        SELECT
+          pt.*,
+          COUNT(pti.id) AS item_count
+        FROM packing_templates pt
+        LEFT JOIN packing_template_items pti
+          ON pti.template_id = pt.id
+        WHERE pt.user_id = ?
+        GROUP BY pt.id
+        ORDER BY pt.created_at DESC
+        `,
+        [userId]
+      );
+  
+      return res.status(200).json(templates);
+    } catch (error) {
+      console.error("Get packing templates error:", error.message);
+      return res.status(500).json({ message: "Server error" });
+    }
+  };
 
 const getPackingTemplateById = async (req, res) => {
   try {
