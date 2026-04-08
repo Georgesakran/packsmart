@@ -294,7 +294,8 @@ const deleteTrip = (req, res) => {
 const duplicateTrip = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { tripId } = req.params;
+    const { id } = req.params;
+    const tripId = id;
 
     const tripRows = await queryAsync(
       `
@@ -461,7 +462,8 @@ const duplicateTrip = async (req, res) => {
 const archiveTrip = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { tripId } = req.params;
+    const { id } = req.params;
+    const tripId = id;
 
     const result = await queryAsync(
       `
@@ -486,7 +488,8 @@ const archiveTrip = async (req, res) => {
 const unarchiveTrip = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { tripId } = req.params;
+    const { id } = req.params;
+    const tripId = id;
 
     const result = await queryAsync(
       `
