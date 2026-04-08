@@ -471,9 +471,9 @@ const saveTripAsTemplate = async (req, res) => {
           INSERT INTO packing_templates (
             user_id,
             name,
-            description,
             travel_type,
-            weather_type
+            weather_type,
+            notes
           )
           VALUES (?, ?, ?, ?, ?)
         `;
@@ -483,9 +483,9 @@ const saveTripAsTemplate = async (req, res) => {
           [
             userId,
             name.trim(),
+            travelType || "casual",
+            weatherType || "mixed",
             description || "",
-            travelType || null,
-            weatherType || null,
           ],
           (templateErr, templateResult) => {
             if (templateErr) {
@@ -501,13 +501,12 @@ const saveTripAsTemplate = async (req, res) => {
               item.custom_name || null,
               item.source_type || "custom",
               item.quantity || 1,
-              item.category || "custom",
-              item.audience || null,
               item.size_code || null,
-              item.pack_behavior || null,
-              item.base_volume_cm3 || null,
-              item.base_weight_g || null,
-              item.assigned_bag_id || null,
+              item.category || "custom",
+              item.audience || "unisex",
+              item.base_volume_cm3,
+              item.base_weight_g,
+              item.pack_behavior,
             ]);
 
             const insertTemplateItemsQuery = `
@@ -517,13 +516,12 @@ const saveTripAsTemplate = async (req, res) => {
                 custom_name,
                 source_type,
                 quantity,
+                size_code,
                 category,
                 audience,
-                size_code,
-                pack_behavior,
                 base_volume_cm3,
                 base_weight_g,
-                assigned_bag_id
+                pack_behavior
               )
               VALUES ?
             `;
