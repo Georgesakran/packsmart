@@ -1,13 +1,7 @@
 const db = require("../config/db");
 const { enrichItemWithRules } = require("../services/packingRulesEngine");
+const queryAsync = require("../utils/queryAsync");
 
-const queryAsync = (query, values = []) =>
-  new Promise((resolve, reject) => {
-    db.query(query, values, (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
-    });
-  });
 
 const getOwnedTrip = (tripId, userId) => {
   return new Promise((resolve, reject) => {
@@ -629,6 +623,7 @@ const getTripTravelDaySummary = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 const getSuggestedTravelDayMode = (item) => {
   const name = (item.name || "").toLowerCase();
   const category = (item.category || "").toLowerCase();

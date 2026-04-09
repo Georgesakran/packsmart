@@ -13,6 +13,7 @@ const {
   bulkDeleteTrips,
   bulkArchiveTrips,
   bulkUnarchiveTrips,
+  getTripActivityHistory,
 } = require("../controllers/tripController");
 
 router.post("/", protect, createTrip);
@@ -26,5 +27,6 @@ router.put("/:id/unarchive", protect, unarchiveTrip);
 router.post("/bulk-delete", protect, bulkDeleteTrips);
 router.post("/bulk-archive", protect, bulkArchiveTrips);
 router.post("/bulk-unarchive", protect, bulkUnarchiveTrips);
+router.get("/:id/activity-history", protect, getTripActivityHistory);
 
 module.exports = router;

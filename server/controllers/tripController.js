@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const queryAsync = require("../utils/queryAsync");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
+const { logTripActivity } = require("../utils/tripActivityLogger");
 
 const createTrip = (req, res) => {
   try {
@@ -61,7 +62,17 @@ const createTrip = (req, res) => {
           console.error("Create trip error:", err.message);
           return res.status(500).json({ message: "Server error" });
         }
-
+      
+        logTripActivity({
+          tripId: result.insertId,
+          userId,
+          eventType: "trip_created",
+          title: "Trip created",
+          details: `Created trip "${tripName}"`,
+        }).catch((logError) => {
+          console.error("Trip activity log error:", logError.message);
+        });
+      
         return successResponse(
           res,
           "Trip created successfully",
@@ -70,6 +81,7 @@ const createTrip = (req, res) => {
         );
       }
     );
+
   } catch (error) {
     console.error("Create trip catch error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -279,7 +291,6 @@ const deleteTrip = async (req, res) => {
   }
 };
 
-
 const duplicateTrip = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -438,6 +449,14 @@ const duplicateTrip = async (req, res) => {
       );
     }
 
+    await logTripActivity({
+      tripId: newTripId,
+      userId,
+      eventType: "trip_duplicated",
+      title: "Trip duplicated",
+      details: `Created as a copy of trip #${tripId}`,
+    });
+    
     return successResponse(
       res,
       "Trip duplicated successfully",
@@ -473,11 +492,20 @@ const archiveTrip = (req, res) => {
         });
       }
 
+
       console.log("Archive trip result:", result);
 
       if (!result || result.affectedRows === 0) {
         return errorResponse(res, "Trip not found", 404);
       }
+
+      logTripActivity({
+        tripId: id,
+        userId,
+        eventType: "trip_archived",
+        title: "Trip archived",
+        details: "Trip was moved to archived state",
+      });
 
       return successResponse(res, "Trip archived successfully");
     });
@@ -517,6 +545,14 @@ const unarchiveTrip = (req, res) => {
       if (!result || result.affectedRows === 0) {
         return errorResponse(res, "Trip not found", 404);
       }
+
+      logTripActivity({
+        tripId: id,
+        userId,
+        eventType: "trip_restored",
+        title: "Trip restored",
+        details: "Trip was restored from archived state",
+      });
       return successResponse(res, "Trip restored successfully");
     });
   } catch (error) {
@@ -605,6 +641,47 @@ const bulkUnarchiveTrips = async (req, res) => {
   }
 };
 
+const getTripActivityHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tripId = req.params.id;
+
+    const tripRows = await queryAsync(
+      `
+      SELECT id
+      FROM trips
+      WHERE id = ? AND user_id = ?
+      LIMIT 1
+      `,
+      [tripId, userId]
+    );
+
+    if (tripRows.length === 0) {
+      return errorResponse(res, "Trip not found", 404);
+    }
+
+    const rows = await queryAsync(
+      `
+      SELECT
+        id,
+        event_type,
+        title,
+        details,
+        created_at
+      FROM trip_activity_logs
+      WHERE trip_id = ? AND user_id = ?
+      ORDER BY created_at DESC, id DESC
+      `,
+      [tripId, userId]
+    );
+
+    return successResponse(res, "Trip activity history fetched successfully", rows);
+  } catch (error) {
+    console.error("Get trip activity history error:", error.message);
+    return errorResponse(res, "Server error", 500);
+  }
+};
+
 module.exports = {
   createTrip,
   getTrips,
@@ -617,4 +694,5 @@ module.exports = {
   bulkDeleteTrips,
   bulkArchiveTrips,
   bulkUnarchiveTrips,
+  getTripActivityHistory,
 };

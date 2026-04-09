@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const queryAsync = require("../utils/queryAsync");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
+const { logTripActivity } = require("../utils/tripActivityLogger");
 
 const getPackingTemplates = async (req, res) => {
   try {
@@ -402,6 +403,14 @@ const applyTemplateToTrip = async (req, res) => {
       );
     }
 
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "template_applied",
+      title: "Template applied",
+      details: `${templates[0].name} applied to this trip (${templateItems.length} items)`,
+    });
+
     return successResponse(
       res,
       shouldReplace
@@ -540,6 +549,13 @@ const saveTripAsTemplate = async (req, res) => {
                 );
                 return res.status(500).json({ message: "Server error" });
               }
+              logTripActivity({
+                tripId,
+                userId,
+                eventType: "template_saved_from_trip",
+                title: "Trip saved as template",
+                details: `Saved as template "${name.trim()}"`,
+              });
 
               return successResponse(
                 res,
