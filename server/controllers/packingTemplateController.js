@@ -555,6 +555,36 @@ const saveTripAsTemplate = async (req, res) => {
   }
 };
 
+const bulkDeletePackingTemplates = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { templateIds } = req.body;
+
+    if (!Array.isArray(templateIds) || templateIds.length === 0) {
+      return res.status(400).json({ message: "templateIds array is required" });
+    }
+
+    for (const templateId of templateIds) {
+      await queryAsync(
+        `DELETE FROM packing_template_items WHERE template_id = ?`,
+        [templateId]
+      );
+
+      await queryAsync(
+        `DELETE FROM packing_templates WHERE id = ? AND user_id = ?`,
+        [templateId, userId]
+      );
+    }
+
+    return res.status(200).json({
+      message: "Selected templates deleted successfully",
+    });
+  } catch (error) {
+    console.error("Bulk delete packing templates error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getPackingTemplates,
   getPackingTemplateById,
@@ -563,4 +593,5 @@ module.exports = {
   deletePackingTemplate,
   applyTemplateToTrip,
   saveTripAsTemplate,
+  bulkDeletePackingTemplates,
 };
