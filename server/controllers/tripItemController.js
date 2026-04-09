@@ -107,6 +107,16 @@ const createTripItem = async (req, res) => {
           return res.status(500).json({ message: "Server error" });
         }
 
+        logTripActivity({
+          tripId,
+          userId,
+          eventType: "item_added",
+          title: "Item added",
+          details: `Added ${customName || "a trip item"} to this trip.`,
+        }).catch((logError) => {
+          console.error("Trip activity log error:", logError.message);
+        });
+
         return res.status(201).json({
           message: "Trip item created successfully",
           tripItemId: result.insertId,
@@ -439,7 +449,7 @@ const updateTripItemPackingStatus = async (req, res) => {
       userId,
       eventType: "checklist_updated",
       title: "Checklist updated",
-      details: `Item packing status changed to "${packingStatus}".`,
+      details: `${itemRows[0].custom_name || "An item"} was marked as "${packingStatus}".`,
     });
     return res.status(200).json({
       message: "Trip item packing status updated successfully",
@@ -554,6 +564,14 @@ const updateTripItemTravelDayMode = async (req, res) => {
       [travelDayMode, itemId, tripId]
     );
 
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "travel_day_updated",
+      title: "Travel-day plan updated",
+      details: `${itemRows[0].custom_name || "An item"} was updated to "${travelDayMode}".`,
+    });
+
     return res.status(200).json({
       message: "Trip item travel day mode updated successfully",
       travelDayMode,
@@ -616,14 +634,6 @@ const getTripTravelDaySummary = async (req, res) => {
       }
     });
     
-    await logTripActivity({
-      tripId,
-      userId,
-      eventType: "travel_day_updated",
-      title: "Travel-day plan updated",
-      details: `Item travel-day mode changed to "${travelDayMode}".`,
-    });
-
     return res.status(200).json({
       totalItems: items.length,
       wearOnTravelDayCount: wearOnTravelDay.length,
