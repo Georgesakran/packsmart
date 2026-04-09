@@ -1,38 +1,32 @@
 const db = require("../config/db");
+const queryAsync = require("../utils/queryAsync");
+const { successResponse, errorResponse } = require("../utils/apiResponse");
 
-const queryAsync = (query, values = []) =>
-  new Promise((resolve, reject) => {
-    db.query(query, values, (err, results) => {
-      if (err) return reject(err);
-      resolve(results);
-    });
-  });
-
-  const getPackingTemplates = async (req, res) => {
-    try {
-      const userId = req.user.id;
+const getPackingTemplates = async (req, res) => {
+  try {
+    const userId = req.user.id;
   
-      const templates = await queryAsync(
-        `
-        SELECT
-          pt.*,
-          COUNT(pti.id) AS item_count
+    const templates = await queryAsync(
+      `
+      SELECT
+        pt.*,
+        COUNT(pti.id) AS item_count
         FROM packing_templates pt
         LEFT JOIN packing_template_items pti
-          ON pti.template_id = pt.id
+        ON pti.template_id = pt.id
         WHERE pt.user_id = ?
         GROUP BY pt.id
         ORDER BY pt.created_at DESC
-        `,
-        [userId]
-      );
+      `,
+      [userId]
+    );
   
-      return res.status(200).json(templates);
+    return successResponse(res, "Packing templates fetched successfully", templates);
     } catch (error) {
       console.error("Get packing templates error:", error.message);
       return res.status(500).json({ message: "Server error" });
     }
-  };
+};
 
 const getPackingTemplateById = async (req, res) => {
   try {
@@ -68,10 +62,11 @@ const getPackingTemplateById = async (req, res) => {
       [id]
     );
 
-    return res.status(200).json({
+    return successResponse(res, "Packing template fetched successfully", {
       template,
       items,
     });
+
   } catch (error) {
     console.error("Get packing template by id error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -152,10 +147,12 @@ const createPackingTemplate = async (req, res) => {
       );
     }
 
-    return res.status(201).json({
-      message: "Packing template created successfully",
-      templateId,
-    });
+  return successResponse(
+    res,
+    "Packing template created successfully",
+    { templateId },
+    201
+  );
   } catch (error) {
     console.error("Create packing template error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -250,9 +247,8 @@ const updatePackingTemplate = async (req, res) => {
       );
     }
 
-    return res.status(200).json({
-      message: "Packing template updated successfully",
-    });
+    return successResponse(res, "Packing template updated successfully");
+
   } catch (error) {
     console.error("Update packing template error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -276,9 +272,8 @@ const deletePackingTemplate = async (req, res) => {
       return res.status(404).json({ message: "Packing template not found" });
     }
 
-    return res.status(200).json({
-      message: "Packing template deleted successfully",
-    });
+return successResponse(res, "Packing template deleted successfully");
+
   } catch (error) {
     console.error("Delete packing template error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -307,7 +302,9 @@ const applyTemplateToTrip = async (req, res) => {
   try {
     const userId = req.user.id;
     const { tripId, templateId } = req.params;
-    const { replaceExisting } = req.body || {};
+
+    const { replaceExisting, replaceExistingItems } = req.body || {};
+    const shouldReplace = !!(replaceExisting || replaceExistingItems);
 
     const trip = await getOwnedTrip(tripId, userId);
     if (!trip) {
@@ -338,14 +335,14 @@ const applyTemplateToTrip = async (req, res) => {
       [tripId]
     );
 
-    if (existingTripItems.length > 0 && !replaceExisting) {
+    if (existingTripItems.length > 0 && !shouldReplace) {
       return res.status(409).json({
         message:
           "This trip already has items. Clear them first or apply the template in replace mode.",
       });
     }
     
-    if (existingTripItems.length > 0 && replaceExisting) {
+    if (existingTripItems.length > 0 && shouldReplace) {
       await queryAsync(
         `
         DELETE FROM trip_items
@@ -405,21 +402,25 @@ const applyTemplateToTrip = async (req, res) => {
       );
     }
 
-    return res.status(201).json({
-      message: replaceExisting
+    return successResponse(
+      res,
+      shouldReplace
         ? "Packing template replaced existing trip items successfully"
         : "Packing template applied successfully",
-      trip: {
-        id: trip.id,
-        tripName: trip.trip_name,
+      {
+        trip: {
+          id: trip.id,
+          tripName: trip.trip_name,
+        },
+        template: {
+          id: templates[0].id,
+          name: templates[0].name,
+        },
+        appliedItemsCount: templateItems.length,
+        replacedExisting: shouldReplace,
       },
-      template: {
-        id: templates[0].id,
-        name: templates[0].name,
-      },
-      appliedItemsCount: templateItems.length,
-      replacedExisting: !!replaceExisting,
-    });
+      201
+    );
   } catch (error) {
     console.error("Apply template to trip error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -540,10 +541,13 @@ const saveTripAsTemplate = async (req, res) => {
                 return res.status(500).json({ message: "Server error" });
               }
 
-              return res.status(201).json({
-                message: "Trip saved as template successfully",
-                templateId,
-              });
+              return successResponse(
+                res,
+                "Trip saved as template successfully",
+                { templateId },
+                201
+              );
+
             });
           }
         );
@@ -561,7 +565,7 @@ const bulkDeletePackingTemplates = async (req, res) => {
     const { templateIds } = req.body;
 
     if (!Array.isArray(templateIds) || templateIds.length === 0) {
-      return res.status(400).json({ message: "templateIds array is required" });
+      return errorResponse(res, "templateIds array is required", 400);
     }
 
     for (const templateId of templateIds) {
@@ -576,9 +580,8 @@ const bulkDeletePackingTemplates = async (req, res) => {
       );
     }
 
-    return res.status(200).json({
-      message: "Selected templates deleted successfully",
-    });
+    return successResponse(res, "Selected templates deleted successfully");
+    
   } catch (error) {
     console.error("Bulk delete packing templates error:", error.message);
     return res.status(500).json({ message: "Server error" });

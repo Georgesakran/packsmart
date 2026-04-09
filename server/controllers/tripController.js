@@ -1,4 +1,6 @@
 const db = require("../config/db");
+const queryAsync = require("../utils/queryAsync");
+const { successResponse, errorResponse } = require("../utils/apiResponse");
 
 const createTrip = (req, res) => {
   try {
@@ -60,10 +62,12 @@ const createTrip = (req, res) => {
           return res.status(500).json({ message: "Server error" });
         }
 
-        return res.status(201).json({
-          message: "Trip created successfully",
-          tripId: result.insertId,
-        });
+        return successResponse(
+          res,
+          "Trip created successfully",
+          { tripId: result.insertId },
+          201
+        );
       }
     );
   } catch (error) {
@@ -131,9 +135,7 @@ const getTrips = (req, res) => {
         console.error("Get trips error:", err.message);
         return res.status(500).json({ message: "Server error" });
       }
-
-      return res.status(200).json(results);
-    });
+    return successResponse(res, "Trips fetched successfully", results);    });
   } catch (error) {
     console.error("Get trips catch error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -159,12 +161,10 @@ const getTripById = (req, res) => {
       }
 
       if (results.length === 0) {
-        return res.status(404).json({
-          message: "Trip not found",
-        });
+        return errorResponse(res, "Trip not found", 404);
       }
 
-      return res.status(200).json(results[0]);
+      return successResponse(res, results[0]);
     });
   } catch (error) {
     console.error("Get trip by id catch error:", error.message);
@@ -203,9 +203,7 @@ const updateTrip = (req, res) => {
       }
 
       if (checkResults.length === 0) {
-        return res.status(404).json({
-          message: "Trip not found",
-        });
+        return errorResponse(res, "Trip not found", 404);
       }
 
       const updateQuery = `
@@ -245,10 +243,7 @@ const updateTrip = (req, res) => {
             console.error("Update trip error:", updateErr.message);
             return res.status(500).json({ message: "Server error" });
           }
-
-          return res.status(200).json({
-            message: "Trip updated successfully",
-          });
+          return successResponse(res, "Trip updated successfully");
         }
       );
     });
@@ -258,35 +253,29 @@ const updateTrip = (req, res) => {
   }
 };
 
-const deleteTrip = (req, res) => {
+const deleteTrip = async (req, res) => {
   try {
     const userId = req.user.id;
     const tripId = req.params.id;
 
-    const query = `
-      DELETE FROM trips
-      WHERE id = ? AND user_id = ?
-    `;
+    const existing = await queryAsync(
+      `SELECT id FROM trips WHERE id = ? AND user_id = ? LIMIT 1`,
+      [tripId, userId]
+    );
 
-    db.query(query, [tripId, userId], (err, result) => {
-      if (err) {
-        console.error("Delete trip error:", err.message);
-        return res.status(500).json({ message: "Server error" });
-      }
+    if (existing.length === 0) {
+      return errorResponse(res, "Trip not found", 404);
+    }
 
-      if (result.affectedRows === 0) {
-        return res.status(404).json({
-          message: "Trip not found",
-        });
-      }
+    await queryAsync(`DELETE FROM trip_results WHERE trip_id = ?`, [tripId]);
+    await queryAsync(`DELETE FROM trip_items WHERE trip_id = ?`, [tripId]);
+    await queryAsync(`DELETE FROM trip_suitcases WHERE trip_id = ?`, [tripId]);
+    await queryAsync(`DELETE FROM trips WHERE id = ? AND user_id = ?`, [tripId, userId]);
 
-      return res.status(200).json({
-        message: "Trip deleted successfully",
-      });
-    });
+    return successResponse(res, "Trip deleted successfully");
   } catch (error) {
-    console.error("Delete trip catch error:", error.message);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Delete trip error:", error.message);
+    return errorResponse(res, "Server error", 500);
   }
 };
 
@@ -308,7 +297,7 @@ const duplicateTrip = async (req, res) => {
     );
 
     if (tripRows.length === 0) {
-      return res.status(404).json({ message: "Trip not found" });
+      return errorResponse(res, "Trip not found", 404);
     }
 
     const originalTrip = tripRows[0];
@@ -449,10 +438,13 @@ const duplicateTrip = async (req, res) => {
       );
     }
 
-    return res.status(201).json({
-      message: "Trip duplicated successfully",
-      newTripId,
-    });
+    return successResponse(
+      res,
+      "Trip duplicated successfully",
+      { newTripId },
+      201
+    );
+     
   } catch (error) {
     console.error("Duplicate trip error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -484,10 +476,10 @@ const archiveTrip = (req, res) => {
       console.log("Archive trip result:", result);
 
       if (!result || result.affectedRows === 0) {
-        return res.status(404).json({ message: "Trip not found" });
+        return errorResponse(res, "Trip not found", 404);
       }
 
-      return res.status(200).json({ message: "Trip archived successfully" });
+      return successResponse(res, "Trip archived successfully");
     });
   } catch (error) {
     console.error("Archive trip catch error:", error);
@@ -523,10 +515,9 @@ const unarchiveTrip = (req, res) => {
       console.log("Unarchive trip result:", result);
 
       if (!result || result.affectedRows === 0) {
-        return res.status(404).json({ message: "Trip not found" });
+        return errorResponse(res, "Trip not found", 404);
       }
-
-      return res.status(200).json({ message: "Trip restored successfully" });
+      return successResponse(res, "Trip restored successfully");
     });
   } catch (error) {
     console.error("Unarchive trip catch error:", error);
@@ -543,7 +534,7 @@ const bulkDeleteTrips = async (req, res) => {
     const { tripIds } = req.body;
 
     if (!Array.isArray(tripIds) || tripIds.length === 0) {
-      return res.status(400).json({ message: "tripIds array is required" });
+      return errorResponse(res, "tripIds array is required", 400);
     }
 
     for (const tripId of tripIds) {
@@ -553,9 +544,7 @@ const bulkDeleteTrips = async (req, res) => {
       await queryAsync(`DELETE FROM trips WHERE id = ? AND user_id = ?`, [tripId, userId]);
     }
 
-    return res.status(200).json({
-      message: "Selected trips deleted successfully",
-    });
+    return successResponse(res, "Selected trips deleted successfully");
   } catch (error) {
     console.error("Bulk delete trips error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -581,10 +570,8 @@ const bulkArchiveTrips = async (req, res) => {
       `,
       [userId, ...tripIds]
     );
+    return successResponse(res, "Selected trips archived successfully");
 
-    return res.status(200).json({
-      message: "Selected trips archived successfully",
-    });
   } catch (error) {
     console.error("Bulk archive trips error:", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -610,10 +597,8 @@ const bulkUnarchiveTrips = async (req, res) => {
       `,
       [userId, ...tripIds]
     );
+    return successResponse(res, "Selected trips restored successfully");
 
-    return res.status(200).json({
-      message: "Selected trips restored successfully",
-    });
   } catch (error) {
     console.error("Bulk unarchive trips error:", error.message);
     return res.status(500).json({ message: "Server error" });

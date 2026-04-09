@@ -50,6 +50,9 @@ app.use("/api/packing-templates", packingTemplateRoutes);
 
 const PORT = process.env.PORT || 5000;
 
+const errorMiddleware = require("./middleware/errorMiddleware");
+app.use(errorMiddleware);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
