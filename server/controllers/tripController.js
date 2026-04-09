@@ -459,7 +459,6 @@ const duplicateTrip = async (req, res) => {
   }
 };
 
-
 const archiveTrip = (req, res) => {
   try {
     const userId = req.user.id;
@@ -538,6 +537,89 @@ const unarchiveTrip = (req, res) => {
   }
 };
 
+const bulkDeleteTrips = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripIds } = req.body;
+
+    if (!Array.isArray(tripIds) || tripIds.length === 0) {
+      return res.status(400).json({ message: "tripIds array is required" });
+    }
+
+    for (const tripId of tripIds) {
+      await queryAsync(`DELETE FROM trip_results WHERE trip_id = ?`, [tripId]);
+      await queryAsync(`DELETE FROM trip_items WHERE trip_id = ?`, [tripId]);
+      await queryAsync(`DELETE FROM trip_suitcases WHERE trip_id = ?`, [tripId]);
+      await queryAsync(`DELETE FROM trips WHERE id = ? AND user_id = ?`, [tripId, userId]);
+    }
+
+    return res.status(200).json({
+      message: "Selected trips deleted successfully",
+    });
+  } catch (error) {
+    console.error("Bulk delete trips error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const bulkArchiveTrips = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripIds } = req.body;
+
+    if (!Array.isArray(tripIds) || tripIds.length === 0) {
+      return res.status(400).json({ message: "tripIds array is required" });
+    }
+
+    const placeholders = tripIds.map(() => "?").join(",");
+
+    await queryAsync(
+      `
+      UPDATE trips
+      SET status = 'archived'
+      WHERE user_id = ? AND id IN (${placeholders})
+      `,
+      [userId, ...tripIds]
+    );
+
+    return res.status(200).json({
+      message: "Selected trips archived successfully",
+    });
+  } catch (error) {
+    console.error("Bulk archive trips error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const bulkUnarchiveTrips = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripIds } = req.body;
+
+    if (!Array.isArray(tripIds) || tripIds.length === 0) {
+      return res.status(400).json({ message: "tripIds array is required" });
+    }
+
+    const placeholders = tripIds.map(() => "?").join(",");
+
+    await queryAsync(
+      `
+      UPDATE trips
+      SET status = 'draft'
+      WHERE user_id = ? AND id IN (${placeholders})
+      `,
+      [userId, ...tripIds]
+    );
+
+    return res.status(200).json({
+      message: "Selected trips restored successfully",
+    });
+  } catch (error) {
+    console.error("Bulk unarchive trips error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTrip,
   getTrips,
@@ -547,4 +629,7 @@ module.exports = {
   duplicateTrip,
   archiveTrip,
   unarchiveTrip,
+  bulkDeleteTrips,
+  bulkArchiveTrips,
+  bulkUnarchiveTrips,
 };

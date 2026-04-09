@@ -10,6 +10,9 @@ const {
   duplicateTrip,
   archiveTrip,
   unarchiveTrip,
+  bulkDeleteTrips,
+  bulkArchiveTrips,
+  bulkUnarchiveTrips,
 } = require("../controllers/tripController");
 
 router.post("/", protect, createTrip);
@@ -20,5 +23,8 @@ router.delete("/:id", protect, deleteTrip);
 router.post("/:id/duplicate", protect, duplicateTrip);
 router.put("/:id/archive", protect, archiveTrip);
 router.put("/:id/unarchive", protect, unarchiveTrip);
+router.post("/bulk-delete", protect, bulkDeleteTrips);
+router.post("/bulk-archive", protect, bulkArchiveTrips);
+router.post("/bulk-unarchive", protect, bulkUnarchiveTrips);
 
 module.exports = router;
