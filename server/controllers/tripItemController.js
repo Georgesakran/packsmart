@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const { enrichItemWithRules } = require("../services/packingRulesEngine");
 const queryAsync = require("../utils/queryAsync");
+const { logTripActivity } = require("../utils/tripActivityLogger");
 
 
 const getOwnedTrip = (tripId, userId) => {
@@ -433,7 +434,13 @@ const updateTripItemPackingStatus = async (req, res) => {
       `,
       [packingStatus, packedAt, itemId, tripId]
     );
-
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "checklist_updated",
+      title: "Checklist updated",
+      details: `Item packing status changed to "${packingStatus}".`,
+    });
     return res.status(200).json({
       message: "Trip item packing status updated successfully",
       packingStatus,
@@ -607,6 +614,14 @@ const getTripTravelDaySummary = async (req, res) => {
       } else {
         normal.push(normalized);
       }
+    });
+    
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "travel_day_updated",
+      title: "Travel-day plan updated",
+      details: `Item travel-day mode changed to "${travelDayMode}".`,
     });
 
     return res.status(200).json({

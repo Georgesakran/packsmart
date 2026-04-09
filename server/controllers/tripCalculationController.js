@@ -1,5 +1,7 @@
 const db = require("../config/db");
 const { calculateTripResult } = require("../services/tripCalculationService");
+const { logTripActivity } = require("../utils/tripActivityLogger");
+
 
 const getOwnedTrip = (tripId, userId) => {
   return new Promise((resolve, reject) => {
@@ -178,6 +180,14 @@ const calculateTrip = async (req, res) => {
                 console.error("Save trip results error:", saveErr.message);
                 return res.status(500).json({ message: "Server error" });
               }
+
+              logTripActivity({
+                tripId,
+                userId,
+                eventType: "trip_calculated",
+                title: "Trip calculated",
+                details: "Trip results were generated successfully.",
+              });
 
               return res.status(200).json({
                 message: "Trip calculated successfully",

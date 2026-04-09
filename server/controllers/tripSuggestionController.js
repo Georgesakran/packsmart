@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const { buildSuggestionRules } = require("../services/tripSuggestionService");
+const { logTripActivity } = require("../utils/tripActivityLogger");
 
 const getOwnedTrip = (tripId, userId) => {
   return new Promise((resolve, reject) => {
@@ -160,6 +161,14 @@ const generateSuggestions = async (req, res) => {
         packBehavior: baseItem.pack_behavior,
       });
     }
+
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "suggestions_generated",
+      title: "Suggestions generated",
+      details: "Smart packing suggestions were generated for this trip.",
+    });
 
     return res.status(201).json({
       message: "Trip suggestions generated successfully",
