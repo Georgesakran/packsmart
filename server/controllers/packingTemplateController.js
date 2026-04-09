@@ -408,7 +408,7 @@ const applyTemplateToTrip = async (req, res) => {
       userId,
       eventType: "template_applied",
       title: "Template applied",
-      details: `${templates[0].name} applied to this trip (${templateItems.length} items)`,
+      details: `"${templates[0].name}" was applied to this trip with ${templateItems.length} item${templateItems.length === 1 ? "" : "s"}.`,
     });
 
     return successResponse(
@@ -554,7 +554,7 @@ const saveTripAsTemplate = async (req, res) => {
                 userId,
                 eventType: "template_saved_from_trip",
                 title: "Trip saved as template",
-                details: `Saved as template "${name.trim()}"`,
+                details: `This trip was saved as template "${name.trim()}".`,
               });
 
               return successResponse(

@@ -186,7 +186,9 @@ const calculateTrip = async (req, res) => {
                 userId,
                 eventType: "trip_calculated",
                 title: "Trip calculated",
-                details: "Trip results were generated successfully.",
+                details: overallFits
+                  ? "Trip calculation completed and the current setup fits."
+                  : "Trip calculation completed and the current setup needs adjustment.",
               });
 
               return res.status(200).json({

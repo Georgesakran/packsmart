@@ -2,6 +2,7 @@ const db = require("../config/db");
 const { enrichItemWithRules } = require("../services/packingRulesEngine");
 const queryAsync = require("../utils/queryAsync");
 const { logTripActivity } = require("../utils/tripActivityLogger");
+const { getTripItemDisplayName } = require("../utils/tripItemName");
 
 
 const getOwnedTrip = (tripId, userId) => {
@@ -107,12 +108,14 @@ const createTripItem = async (req, res) => {
           return res.status(500).json({ message: "Server error" });
         }
 
+        const itemName = customName || (sourceType === "database" ? `Item #${itemId}` : "Custom item");
+
         logTripActivity({
           tripId,
           userId,
           eventType: "item_added",
           title: "Item added",
-          details: `Added ${customName || "a trip item"} to this trip.`,
+          details: `${itemName} was added to this trip.`,
         }).catch((logError) => {
           console.error("Trip activity log error:", logError.message);
         });
@@ -238,9 +241,9 @@ const updateTripItem = async (req, res) => {
         baseVolumeCm3,
         baseWeightG,
         packBehavior,
+        assignedBagId || null,
         tripItemId,
         tripId,
-        assignedBagId || null,
       ],
       (err, result) => {
         if (err) {
@@ -444,12 +447,14 @@ const updateTripItemPackingStatus = async (req, res) => {
       `,
       [packingStatus, packedAt, itemId, tripId]
     );
+    const itemName = getTripItemDisplayName(itemRows[0]);
+
     await logTripActivity({
       tripId,
       userId,
       eventType: "checklist_updated",
       title: "Checklist updated",
-      details: `${itemRows[0].custom_name || "An item"} was marked as "${packingStatus}".`,
+      details: `${itemName} was marked as "${packingStatus}".`,
     });
     return res.status(200).json({
       message: "Trip item packing status updated successfully",
@@ -564,12 +569,14 @@ const updateTripItemTravelDayMode = async (req, res) => {
       [travelDayMode, itemId, tripId]
     );
 
+    const itemName = getTripItemDisplayName(itemRows[0]);
+
     await logTripActivity({
       tripId,
       userId,
       eventType: "travel_day_updated",
       title: "Travel-day plan updated",
-      details: `${itemRows[0].custom_name || "An item"} was updated to "${travelDayMode}".`,
+      details: `${itemName} was updated to "${travelDayMode}".`,
     });
 
     return res.status(200).json({

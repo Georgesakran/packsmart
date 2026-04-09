@@ -167,7 +167,7 @@ const generateSuggestions = async (req, res) => {
       userId,
       eventType: "suggestions_generated",
       title: "Suggestions generated",
-      details: "Smart packing suggestions were generated for this trip.",
+      details: `${suggestions.length} smart suggestion${suggestions.length === 1 ? "" : "s"} were generated for this trip.`,
     });
 
     return res.status(201).json({
