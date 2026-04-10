@@ -1,46 +1,60 @@
-const db = require("../config/db");
-const { calculateTripResult } = require("../services/tripCalculationService");
+const queryAsync = require("../utils/queryAsync");
+const { successResponse, errorResponse } = require("../utils/apiResponse");
+const { calculatePackingResult } = require("../services/packingCalculationEngine");
 const { logTripActivity } = require("../utils/tripActivityLogger");
 
+const getOwnedTrip = async (tripId, userId) => {
+  const rows = await queryAsync(
+    `
+    SELECT *
+    FROM trips
+    WHERE id = ? AND user_id = ?
+    LIMIT 1
+    `,
+    [tripId, userId]
+  );
 
-const getOwnedTrip = (tripId, userId) => {
-  return new Promise((resolve, reject) => {
-    const query = `
-      SELECT *
-      FROM trips
-      WHERE id = ? AND user_id = ?
-      LIMIT 1
-    `;
-
-    db.query(query, [tripId, userId], (err, results) => {
-      if (err) return reject(err);
-      if (results.length === 0) return resolve(null);
-      resolve(results[0]);
-    });
-  });
+  return rows[0] || null;
 };
 
 const calculateTrip = async (req, res) => {
   try {
     const userId = req.user.id;
-    const tripId = req.params.tripId;
+    const { id } = req.params;
 
-    const trip = await getOwnedTrip(tripId, userId);
-
+    const trip = await getOwnedTrip(id, userId);
     if (!trip) {
-      return res.status(404).json({
-        message: "Trip not found",
-      });
+      return errorResponse(res, "Trip not found", 404);
     }
 
-    const suitcasesQuery = `
-    SELECT *
-    FROM trip_suitcases
-    WHERE trip_id = ?
-    ORDER BY is_primary DESC, created_at ASC
-  `;
+    const selectedBags = await queryAsync(
+      `
+      SELECT
+        tsb.id,
+        tsb.trip_id,
+        tsb.bag_catalog_id,
+        tsb.quantity,
+        tsb.role_label,
+        tsb.is_recommended,
+        bc.name,
+        bc.brand,
+        bc.bag_type,
+        bc.length_cm,
+        bc.width_cm,
+        bc.height_cm,
+        bc.volume_cm3,
+        bc.empty_weight_kg,
+        bc.max_weight_kg
+      FROM trip_selected_bags tsb
+      JOIN bag_catalog bc ON tsb.bag_catalog_id = bc.id
+      WHERE tsb.trip_id = ?
+      ORDER BY tsb.created_at ASC
+      `,
+      [id]
+    );
 
-    const tripItemsQuery = `
+    const tripItems = await queryAsync(
+      `
       SELECT
         ti.*,
         i.name AS base_item_name
@@ -48,311 +62,159 @@ const calculateTrip = async (req, res) => {
       LEFT JOIN items i ON ti.item_id = i.id
       WHERE ti.trip_id = ?
       ORDER BY ti.created_at ASC
-    `;
+      `,
+      [id]
+    );
 
-    const sizesQuery = `
-      SELECT *
-      FROM size_multipliers
-    `;
-
-    db.query(suitcasesQuery, [tripId], (suitcaseErr, suitcaseResults) => {
-      if (suitcaseErr) {
-        console.error("Calculate trip suitcase error:", suitcaseErr.message);
-        return res.status(500).json({ message: "Server error" });
-      }
-
-      if (suitcaseResults.length === 0) {
-        return res.status(400).json({
-          message: "This trip has no suitcase assigned yet",
-        });
-      }
-      
-      const suitcases = suitcaseResults;
-
-      db.query(tripItemsQuery, [tripId], (itemsErr, tripItemsResults) => {
-        if (itemsErr) {
-          console.error("Calculate trip items error:", itemsErr.message);
-          return res.status(500).json({ message: "Server error" });
-        }
-
-        if (tripItemsResults.length === 0) {
-          return res.status(400).json({
-            message: "This trip has no items yet",
-          });
-        }
-
-        db.query(sizesQuery, async (sizesErr, sizeResults) => {
-          if (sizesErr) {
-            console.error("Calculate trip sizes error:", sizesErr.message);
-            return res.status(500).json({ message: "Server error" });
-          }
-
-          const profileRows = await new Promise((resolve, reject) => {
-            db.query(
-              `
-              SELECT packing_mode
-              FROM user_profiles
-              WHERE user_id = ?
-              LIMIT 1
-              `,
-              [userId],
-              (err, results) => {
-                if (err) return reject(err);
-                resolve(results);
-              }
-            );
-          });
-          
-          const userProfile = profileRows[0] || null;
-          
-          const calculated = calculateTripResult({
-            suitcases,
-            tripItems: tripItemsResults,
-            sizeMultipliers: sizeResults,
-            tripMeta: {
-              weatherType: trip.weather_type,
-              packingMode: userProfile?.packing_mode || "balanced",
-            },
-          });
-
-          const upsertQuery = `
-          INSERT INTO trip_results (
-            trip_id,
-            total_volume_cm3,
-            total_weight_g,
-            weight_kg,
-            used_capacity_percent,
-            remaining_volume_cm3,
-            volume_fits,
-            weight_fits,
-            overall_fits,
-            packing_order_json,
-            layout_json,
-            advice_json,
-            smart_adjustments_json,
-            bag_distribution_json,
-            bag_rebalancing_suggestions_json,
-            item_substitution_suggestions_json
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-            total_volume_cm3 = VALUES(total_volume_cm3),
-            total_weight_g = VALUES(total_weight_g),
-            weight_kg = VALUES(weight_kg),
-            used_capacity_percent = VALUES(used_capacity_percent),
-            remaining_volume_cm3 = VALUES(remaining_volume_cm3),
-            volume_fits = VALUES(volume_fits),
-            weight_fits = VALUES(weight_fits),
-            overall_fits = VALUES(overall_fits),
-            packing_order_json = VALUES(packing_order_json),
-            layout_json = VALUES(layout_json),
-            advice_json = VALUES(advice_json),
-            smart_adjustments_json = VALUES(smart_adjustments_json),
-            bag_distribution_json = VALUES(bag_distribution_json),
-            bag_rebalancing_suggestions_json = VALUES(bag_rebalancing_suggestions_json),
-            item_substitution_suggestions_json = VALUES(item_substitution_suggestions_json),
-            updated_at = CURRENT_TIMESTAMP
-        `;
-
-          db.query(
-            upsertQuery,
-            [
-              tripId,
-              calculated.totals.totalVolumeCm3,
-              calculated.totals.totalWeightG,
-              calculated.totals.weightKg,
-              calculated.totals.usedCapacityPercent,
-              calculated.totals.remainingVolumeCm3,
-              calculated.totals.volumeFits,
-              calculated.totals.weightFits,
-              calculated.totals.overallFits,
-              JSON.stringify(calculated.packingOrder),
-              JSON.stringify(calculated.suitcaseLayout),
-              JSON.stringify(calculated.advice),
-              JSON.stringify(calculated.smartAdjustments),
-              JSON.stringify(calculated.bagDistribution),
-              JSON.stringify(calculated.bagRebalancingSuggestions),
-              JSON.stringify(calculated.itemSubstitutionSuggestions),
-
-            ],
-            (saveErr) => {
-              if (saveErr) {
-                console.error("Save trip results error:", saveErr.message);
-                return res.status(500).json({ message: "Server error" });
-              }
-
-              logTripActivity({
-                tripId,
-                userId,
-                eventType: "trip_calculated",
-                title: "Trip calculated",
-                details: overallFits
-                  ? "Trip calculation completed and the current setup fits."
-                  : "Trip calculation completed and the current setup needs adjustment.",
-              });
-
-              return res.status(200).json({
-                message: "Trip calculated successfully",
-                trip: {
-                  id: trip.id,
-                  tripName: trip.trip_name,
-                  destination: trip.destination,
-                },
-                suitcases: suitcases.map((bag) => ({
-                  id: bag.id,
-                  name: bag.name,
-                  bagRole: bag.bag_role,
-                  isPrimary: !!bag.is_primary,
-                  volumeCm3: Number(bag.volume_cm3),
-                  maxWeightKg: Number(bag.max_weight_kg),
-                })),
-
-                totals: calculated.totals,
-                items: calculated.items,
-                packingOrder: calculated.packingOrder,
-                suitcaseLayout: calculated.suitcaseLayout,
-                advice: calculated.advice,
-                smartAdjustments: calculated.smartAdjustments,
-                bagDistribution: calculated.bagDistribution,
-                bagRebalancingSuggestions: calculated.bagRebalancingSuggestions,
-                itemSubstitutionSuggestions: calculated.itemSubstitutionSuggestions,
-              });
-            }
-          );
-        });
-      });
+    const result = calculatePackingResult({
+      trip,
+      selectedBags,
+      tripItems,
     });
+
+    const existingRows = await queryAsync(
+      `
+      SELECT id
+      FROM trip_results
+      WHERE trip_id = ?
+      LIMIT 1
+      `,
+      [id]
+    );
+
+    const values = [
+      result.overallFits ? 1 : 0,
+      result.totalAvailableVolumeCm3,
+      result.totalUsedVolumeCm3,
+      result.totalFreeVolumeCm3,
+      result.totalAvailableWeightG,
+      result.totalUsedWeightG,
+      result.totalFreeWeightG,
+      result.overflowItemCount,
+      result.wornOnTravelDayCount,
+      JSON.stringify(result.warnings || []),
+      JSON.stringify(result.overflowItems || []),
+      JSON.stringify(result.bagResults || []),
+      JSON.stringify(result.travelDay || {}),
+      JSON.stringify(result.fixSuggestions || []),
+    ];
+
+    if (existingRows.length > 0) {
+      await queryAsync(
+        `
+        UPDATE trip_results
+        SET
+          overall_fits = ?,
+          total_available_volume_cm3 = ?,
+          total_used_volume_cm3 = ?,
+          total_free_volume_cm3 = ?,
+          total_available_weight_g = ?,
+          total_used_weight_g = ?,
+          total_free_weight_g = ?,
+          overflow_item_count = ?,
+          worn_on_travel_day_count = ?,
+          warnings_json = ?,
+          overflow_json = ?,
+          bag_results_json = ?,
+          travel_day_json = ?,
+          fix_suggestions_json = ?
+        WHERE trip_id = ?
+        `,
+        [...values, id]
+      );
+    } else {
+      await queryAsync(
+        `
+        INSERT INTO trip_results (
+          trip_id,
+          overall_fits,
+          total_available_volume_cm3,
+          total_used_volume_cm3,
+          total_free_volume_cm3,
+          total_available_weight_g,
+          total_used_weight_g,
+          total_free_weight_g,
+          overflow_item_count,
+          worn_on_travel_day_count,
+          warnings_json,
+          overflow_json,
+          bag_results_json,
+          travel_day_json,
+          fix_suggestions_json
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [id, ...values]
+      );
+    }
+
+    await logTripActivity({
+      tripId: id,
+      userId,
+      eventType: "trip_calculated",
+      title: "Trip calculated",
+      details: result.overallFits
+        ? "Trip calculation completed and the current setup fits."
+        : "Trip calculation completed and the current setup needs adjustment.",
+    });
+
+    return successResponse(res, "Trip calculated successfully", result);
   } catch (error) {
-    console.error("Calculate trip catch error:", error.message);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Calculate trip error:", error.message);
+    return errorResponse(res, "Server error", 500);
   }
 };
 
 const getTripResults = async (req, res) => {
   try {
     const userId = req.user.id;
-    const tripId = req.params.tripId;
+    const { id } = req.params;
 
-
-    const trip = await getOwnedTrip(tripId, userId);
-
+    const trip = await getOwnedTrip(id, userId);
     if (!trip) {
-      return res.status(404).json({
-        message: "Trip not found",
-      });
+      return errorResponse(res, "Trip not found", 404);
     }
 
-    const suitcasesQuery = `
-      SELECT *
-      FROM trip_suitcases
-      WHERE trip_id = ?
-      ORDER BY is_primary DESC, created_at ASC
-    `;
-
-    const resultsQuery = `
+    const rows = await queryAsync(
+      `
       SELECT *
       FROM trip_results
       WHERE trip_id = ?
       LIMIT 1
-    `;
+      `,
+      [id]
+    );
 
-    db.query(suitcasesQuery, [tripId], (suitcaseErr, suitcaseResults) => {
-      if (suitcaseErr) {
-        console.error("Get trip results suitcase error:", suitcaseErr.message);
-        return res.status(500).json({ message: "Server error" });
-      }
+    if (rows.length === 0) {
+      return successResponse(res, "Trip results fetched successfully", null);
+    }
 
-      db.query(resultsQuery, [tripId], (resultErr, resultRows) => {
-        if (resultErr) {
-          console.error("Get trip results error:", resultErr.message);
-          return res.status(500).json({ message: "Server error" });
-        }
+    const raw = rows[0];
 
-        if (resultRows.length === 0) {
-          return res.status(404).json({
-            message: "No calculation results found for this trip",
-          });
-        }
+    const result = {
+      ...raw,
+      overallFits: Number(raw.overall_fits) === 1,
+      totalAvailableVolumeCm3: Number(raw.total_available_volume_cm3 || 0),
+      totalUsedVolumeCm3: Number(raw.total_used_volume_cm3 || 0),
+      totalFreeVolumeCm3: Number(raw.total_free_volume_cm3 || 0),
+      totalAvailableWeightG: Number(raw.total_available_weight_g || 0),
+      totalUsedWeightG: Number(raw.total_used_weight_g || 0),
+      totalFreeWeightG: Number(raw.total_free_weight_g || 0),
+      overflowItemCount: Number(raw.overflow_item_count || 0),
+      wornOnTravelDayCount: Number(raw.worn_on_travel_day_count || 0),
+      warnings: raw.warnings_json ? JSON.parse(raw.warnings_json) : [],
+      overflowItems: raw.overflow_json ? JSON.parse(raw.overflow_json) : [],
+      bagResults: raw.bag_results_json ? JSON.parse(raw.bag_results_json) : [],
+      travelDay: raw.travel_day_json ? JSON.parse(raw.travel_day_json) : {},
+      fixSuggestions: raw.fix_suggestions_json
+        ? JSON.parse(raw.fix_suggestions_json)
+        : [],
+    };
 
-        const result = resultRows[0];
-        const parseMaybeJson = (value, fallback) => {
-          if (!value) return fallback;
-          if (typeof value === "object") return value;
-        
-          try {
-            return JSON.parse(value);
-          } catch {
-            return fallback;
-          }
-        };
- 
-        const packingOrder = parseMaybeJson(result.packing_order_json, []);
-        const suitcaseLayout = parseMaybeJson(result.layout_json, {});
-        const advice = parseMaybeJson(result.advice_json, []);
-        const smartAdjustments = parseMaybeJson(result.smart_adjustments_json, {
-          mainConstraint: "none",
-          warnings: [],
-          adjustments: [],
-          optimizationTips: [],
-        });
-        const bagDistribution = parseMaybeJson(result.bag_distribution_json, []);
-        const bagRebalancingSuggestions = parseMaybeJson(
-          result.bag_rebalancing_suggestions_json,
-          []
-        );
-        const itemSubstitutionSuggestions = parseMaybeJson(
-          result.item_substitution_suggestions_json,
-          []
-        );
-        const totalAvailableVolumeCm3 = suitcaseResults.reduce(
-          (sum, bag) => sum + Number(bag.volume_cm3 || 0),
-          0
-        );
-        
-        const totalAllowedWeightG = suitcaseResults.reduce(
-          (sum, bag) => sum + Number(bag.max_weight_kg || 0) * 1000,
-          0
-        );
-        return res.status(200).json({
-          trip: {
-            id: trip.id,
-            tripName: trip.trip_name,
-            destination: trip.destination,
-          },
-          suitcases: suitcaseResults.map((bag) => ({
-            id: bag.id,
-            name: bag.name,
-            bagRole: bag.bag_role,
-            isPrimary: !!bag.is_primary,
-            volumeCm3: Number(bag.volume_cm3),
-            maxWeightKg: Number(bag.max_weight_kg),
-          })),
-          totals: {
-            totalVolumeCm3: result.total_volume_cm3,
-            totalWeightG: result.total_weight_g,
-            weightKg: Number(result.weight_kg),
-            usedCapacityPercent: Number(result.used_capacity_percent),
-            remainingVolumeCm3: result.remaining_volume_cm3,
-            volumeFits: !!result.volume_fits,
-            weightFits: !!result.weight_fits,
-            overallFits: !!result.overall_fits,
-            totalAvailableVolumeCm3,
-            totalAllowedWeightG,
-          },
-          packingOrder,
-          suitcaseLayout,
-          advice,
-          calculatedAt: result.calculated_at,
-          smartAdjustments,
-          bagDistribution,
-          bagRebalancingSuggestions,
-          itemSubstitutionSuggestions,
-        });
-      });
-    });
+    return successResponse(res, "Trip results fetched successfully", result);
   } catch (error) {
-    console.error("Get trip results catch error:", error.message);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Get trip results error:", error.message);
+    return errorResponse(res, "Server error", 500);
   }
 };
 

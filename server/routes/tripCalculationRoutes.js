@@ -6,7 +6,7 @@ const {
   getTripResults,
 } = require("../controllers/tripCalculationController");
 
-router.post("/:tripId/calculate", protect, calculateTrip);
-router.get("/:tripId/results", protect, getTripResults);
+router.post("/:id/calculate", protect, calculateTrip);
+router.get("/:id/results", protect, getTripResults);
 
 module.exports = router;

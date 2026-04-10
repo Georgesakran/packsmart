@@ -50,7 +50,6 @@ app.use("/api/trips", tripCalculationRoutes);
 app.use("/api/trips", tripSuggestionRoutes);
 app.use("/api/trips", tripBagRecommendationRoutes);
 app.use("/api/trips", tripItemSuggestionRoutes);
-
 app.use("/api/users", userRoutes);
 app.use("/api/saved-suitcases", savedSuitcaseRoutes);
 app.use("/api/packing-templates", packingTemplateRoutes);
