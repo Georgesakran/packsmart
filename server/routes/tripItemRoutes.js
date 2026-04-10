@@ -12,6 +12,8 @@ const {
   updateTripItemPackingStatus,
   updateTripItemTravelDayMode,
   getTripTravelDaySummary,
+  getTripItemsSummary,
+  updateTripItemQuantity,
 } = require("../controllers/tripItemController");
 
 router.post("/:tripId/items", protect, createTripItem);
@@ -24,5 +26,6 @@ router.put("/:tripId/items/:itemId/packing-status",protect,updateTripItemPacking
 router.get("/:tripId/checklist-summary",protect,getTripChecklistSummary);
 router.put("/:tripId/items/:itemId/travel-day-mode",protect,updateTripItemTravelDayMode);
 router.get("/:tripId/travel-day-summary",protect,getTripTravelDaySummary);
-
+router.get("/:tripId/items-summary", protect, getTripItemsSummary);
+router.put("/:tripId/items/:tripItemId/quantity", protect, updateTripItemQuantity);
 module.exports = router;

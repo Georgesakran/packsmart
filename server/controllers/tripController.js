@@ -191,7 +191,7 @@ const getTripById = (req, res) => {
         return errorResponse(res, "Trip not found", 404);
       }
 
-      return successResponse(res, results[0]);
+      return successResponse(res, "Trip fetched successfully", results[0]);
     });
   } catch (error) {
     console.error("Get trip by id catch error:", error.message);

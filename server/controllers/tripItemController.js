@@ -1,8 +1,8 @@
 const db = require("../config/db");
-const { enrichItemWithRules } = require("../services/packingRulesEngine");
 const queryAsync = require("../utils/queryAsync");
 const { logTripActivity } = require("../utils/tripActivityLogger");
 const { getTripItemDisplayName } = require("../utils/tripItemName");
+const { successResponse, errorResponse } = require("../utils/apiResponse");
 
 
 const getOwnedTrip = (tripId, userId) => {
@@ -146,36 +146,39 @@ const getTripItems = async (req, res) => {
     }
 
     const query = `
-      SELECT
-        ti.*,
-        i.name AS base_item_name,
-        ts.name AS assigned_bag_name,
-        ts.bag_role AS assigned_bag_role
-      FROM trip_items ti
-      LEFT JOIN items i ON ti.item_id = i.id
-      LEFT JOIN trip_suitcases ts ON ti.assigned_bag_id = ts.id
-      WHERE ti.trip_id = ?
-      ORDER BY ti.created_at ASC
-    `;
+    SELECT
+      ti.*,
+      i.name AS base_item_name,
+      ts.name AS assigned_bag_name,
+      ts.bag_role AS assigned_bag_role,
+      ts.suitcase_type AS assigned_bag_type
+    FROM trip_items ti
+    LEFT JOIN items i ON ti.item_id = i.id
+    LEFT JOIN trip_suitcases ts ON ti.assigned_bag_id = ts.id
+    WHERE ti.trip_id = ?
+    ORDER BY ti.created_at ASC
+  `;
 
     db.query(query, [tripId], (err, results) => {
       if (err) {
         console.error("Get trip items error:", err.message);
         return res.status(500).json({ message: "Server error" });
       }
-
-      const enrichedItems = results.map((item) =>
-        enrichItemWithRules({
-          ...item,
-          name: item.custom_name || item.base_item_name || "Custom Item",
-          category: item.category,
-          packingStatus: item.packing_status || "pending",
-          packedAt: item.packed_at || null,
-          travelDayMode: item.travel_day_mode || "normal",
-        })
-      );
       
-      return res.status(200).json(enrichedItems);
+        const mappedItems = results.map((item) => ({
+          ...item,
+          displayName: item.custom_name || item.base_item_name || "Custom Item",
+          quantity: Number(item.quantity || 1),
+          packingStatus: item.packing_status || "pending",
+          travelDayMode: item.travel_day_mode || "normal",
+          sizeCode: item.size_code || null,
+          foldType: item.fold_type || null,
+          assignedBagName: item.assigned_bag_name || null,
+          assignedBagRole: item.assigned_bag_role || null,
+          assignedBagType: item.assigned_bag_type || null,
+        }));
+        return successResponse(res, "Trip items fetched successfully", mappedItems);
+        
     });
   } catch (error) {
     console.error("Get trip items catch error:", error.message);
@@ -250,13 +253,13 @@ const updateTripItem = async (req, res) => {
           console.error("Update trip item error:", err.message);
           return res.status(500).json({ message: "Server error" });
         }
-
+    
         if (result.affectedRows === 0) {
           return res.status(404).json({
             message: "Trip item not found",
           });
         }
-
+    
         return res.status(200).json({
           message: "Trip item updated successfully",
         });
@@ -281,6 +284,19 @@ const deleteTripItem = async (req, res) => {
         message: "Trip not found",
       });
     }
+    const itemRows = await queryAsync(
+      `
+      SELECT *
+      FROM trip_items
+      WHERE id = ? AND trip_id = ?
+      LIMIT 1
+      `,
+      [tripItemId, tripId]
+    );
+    
+    if (itemRows.length === 0) {
+      return res.status(404).json({ message: "Trip item not found" });
+    }
 
     const query = `
       DELETE FROM trip_items
@@ -298,6 +314,13 @@ const deleteTripItem = async (req, res) => {
           message: "Trip item not found",
         });
       }
+      logTripActivity({
+        tripId,
+        userId,
+        eventType: "item_removed",
+        title: "Item removed",
+        details: `${itemRows[0].custom_name || "Item"} was removed from this trip.`,
+      });
 
       return res.status(200).json({
         message: "Trip item deleted successfully",
@@ -386,6 +409,31 @@ const assignTripItemToBag = async (req, res) => {
       `,
       [assignedBagId || null, itemId, tripId]
     );
+    const itemName = itemRows[0].custom_name || "Item";
+    const bagName =
+      assignedBagId
+        ? (
+            await queryAsync(
+              `
+              SELECT name
+              FROM trip_suitcases
+              WHERE id = ? AND trip_id = ?
+              LIMIT 1
+              `,
+              [assignedBagId, tripId]
+            )
+          )[0]?.name || "Selected bag"
+        : "No bag";
+
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "item_bag_updated",
+      title: "Bag assignment updated",
+      details: assignedBagId
+        ? `${itemName} was assigned to ${bagName}.`
+        : `${itemName} bag assignment was cleared.`,
+    });
 
     return res.status(200).json({
       message: assignedBagId
@@ -683,6 +731,96 @@ const getSuggestedTravelDayMode = (item) => {
   return "normal";
 };
 
+const updateTripItemQuantity = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId, tripItemId } = req.params;
+    const { quantity } = req.body;
+
+    if (!quantity || Number(quantity) < 1) {
+      return res.status(400).json({
+        message: "Quantity must be at least 1",
+      });
+    }
+
+    const trip = await getOwnedTrip(tripId, userId);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const itemRows = await queryAsync(
+      `
+      SELECT *
+      FROM trip_items
+      WHERE id = ? AND trip_id = ?
+      LIMIT 1
+      `,
+      [tripItemId, tripId]
+    );
+
+    if (itemRows.length === 0) {
+      return res.status(404).json({ message: "Trip item not found" });
+    }
+
+    await queryAsync(
+      `
+      UPDATE trip_items
+      SET quantity = ?
+      WHERE id = ? AND trip_id = ?
+      `,
+      [Number(quantity), tripItemId, tripId]
+    );
+
+    await logTripActivity({
+      tripId,
+      userId,
+      eventType: "item_quantity_updated",
+      title: "Item quantity updated",
+      details: `${itemRows[0].custom_name || "Item"} quantity was updated to ${Number(quantity)}.`,
+    });
+
+    return res.status(200).json({
+      message: "Trip item quantity updated successfully",
+      quantity: Number(quantity),
+    });
+  } catch (error) {
+    console.error("Update trip item quantity error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getTripItemsSummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tripId } = req.params;
+
+    const trip = await getOwnedTrip(tripId, userId);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+
+    const rows = await queryAsync(
+      `
+      SELECT
+        COUNT(*) AS unique_items,
+        COALESCE(SUM(quantity), 0) AS total_quantity,
+        COALESCE(SUM(CASE WHEN source_type = 'custom' THEN 1 ELSE 0 END), 0) AS custom_items,
+        COALESCE(SUM(CASE WHEN assigned_bag_id IS NULL THEN 1 ELSE 0 END), 0) AS unassigned_items,
+        COALESCE(SUM(CASE WHEN travel_day_mode = 'wear_on_travel_day' THEN 1 ELSE 0 END), 0) AS wear_on_travel_day_items,
+        COALESCE(SUM(CASE WHEN travel_day_mode = 'keep_accessible' THEN 1 ELSE 0 END), 0) AS keep_accessible_items
+      FROM trip_items
+      WHERE trip_id = ?
+      `,
+      [tripId]
+    );
+
+    return res.status(200).json(rows[0] || {});
+  } catch (error) {
+    console.error("Get trip items summary error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTripItem,
   getTripItems,
@@ -694,4 +832,7 @@ module.exports = {
   getTripChecklistSummary,
   updateTripItemTravelDayMode,
   getTripTravelDaySummary,
+  getSuggestedTravelDayMode,
+  updateTripItemQuantity,
+  getTripItemsSummary,
 };
