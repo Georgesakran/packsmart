@@ -467,6 +467,7 @@ const updateTripItemPackingStatus = async (req, res) => {
   }
 };
 
+
 const getTripChecklistSummary = async (req, res) => {
   try {
     const userId = req.user.id;
