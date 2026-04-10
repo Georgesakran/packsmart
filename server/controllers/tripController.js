@@ -9,51 +9,66 @@ const createTrip = (req, res) => {
     const {
       tripName,
       destination,
+      destinationCity,
+      destinationCountry,
       startDate,
       endDate,
       durationDays,
       travelType,
+      tripType,
       weatherType,
       travelerCount,
+      airlineId,
+      packingMode,
       notes,
       status,
     } = req.body;
 
-    if (!tripName) {
+    if (!tripName && !destinationCity && !destination) {
       return res.status(400).json({
-        message: "Trip name is required",
+        message: "Trip name or destination is required",
       });
     }
 
     const query = `
-      INSERT INTO trips (
-        user_id,
-        trip_name,
-        destination,
-        start_date,
-        end_date,
-        duration_days,
-        travel_type,
-        weather_type,
-        traveler_count,
-        notes,
-        status
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    INSERT INTO trips (
+      user_id,
+      trip_name,
+      destination,
+      destination_city,
+      destination_country,
+      start_date,
+      end_date,
+      duration_days,
+      travel_type,
+      trip_type,
+      weather_type,
+      traveler_count,
+      airline_id,
+      packing_mode,
+      notes,
+      status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
     db.query(
       query,
       [
         userId,
-        tripName,
-        destination || null,
+        tripName || null,
+        destination || `${destinationCity || ""}${destinationCity && destinationCountry ? ", " : ""}${destinationCountry || ""}` || null,
+        destinationCity || null,
+        destinationCountry || null,
         startDate || null,
         endDate || null,
         durationDays || null,
-        travelType || "casual",
+        travelType || tripType || "casual",
+        tripType || travelType || "casual",
         weatherType || "mixed",
         travelerCount || 1,
+        airlineId || null,
+        packingMode || "balanced",
         notes || null,
         status || "draft",
       ],
@@ -191,12 +206,17 @@ const updateTrip = (req, res) => {
     const {
       tripName,
       destination,
+      destinationCity,
+      destinationCountry,
       startDate,
       endDate,
       durationDays,
       travelType,
+      tripType,
       weatherType,
       travelerCount,
+      airlineId,
+      packingMode,
       notes,
       status,
     } = req.body;
@@ -219,32 +239,42 @@ const updateTrip = (req, res) => {
       }
 
       const updateQuery = `
-        UPDATE trips
-        SET
-          trip_name = ?,
-          destination = ?,
-          start_date = ?,
-          end_date = ?,
-          duration_days = ?,
-          travel_type = ?,
-          weather_type = ?,
-          traveler_count = ?,
-          notes = ?,
-          status = ?
-        WHERE id = ? AND user_id = ?
-      `;
+      UPDATE trips
+      SET
+        trip_name = ?,
+        destination = ?,
+        destination_city = ?,
+        destination_country = ?,
+        start_date = ?,
+        end_date = ?,
+        duration_days = ?,
+        travel_type = ?,
+        trip_type = ?,
+        weather_type = ?,
+        traveler_count = ?,
+        airline_id = ?,
+        packing_mode = ?,
+        notes = ?,
+        status = ?
+      WHERE id = ? AND user_id = ?
+    `;
 
       db.query(
         updateQuery,
         [
-          tripName,
-          destination || null,
+          tripName || null,
+          destination || `${destinationCity || ""}${destinationCity && destinationCountry ? ", " : ""}${destinationCountry || ""}` || null,
+          destinationCity || null,
+          destinationCountry || null,
           startDate || null,
           endDate || null,
           durationDays || null,
-          travelType || "casual",
+          travelType || tripType || "casual",
+          tripType || travelType || "casual",
           weatherType || "mixed",
           travelerCount || 1,
+          airlineId || null,
+          packingMode || "balanced",
           notes || null,
           status || "draft",
           tripId,

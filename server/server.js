@@ -32,8 +32,10 @@ const tripSuggestionRoutes = require("./routes/tripSuggestionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const savedSuitcaseRoutes = require("./routes/savedSuitcaseRoutes");
 const packingTemplateRoutes = require("./routes/packingTemplateRoutes");
+const airlineRoutes = require("./routes/airlineRoutes");
 
 
+app.use("/api/airlines", airlineRoutes);
 app.use("/api/suitcases", suitcaseRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/size-multipliers", sizeRoutes);
