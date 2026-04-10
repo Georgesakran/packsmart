@@ -37,10 +37,12 @@ const bagRoutes = require("./routes/bagRoutes");
 const tripBagRecommendationRoutes = require("./routes/tripBagRecommendationRoutes");
 const tripItemSuggestionRoutes = require("./routes/tripItemSuggestionRoutes");
 const tripPackingStepsRoutes = require("./routes/tripPackingStepsRoutes");
+const customItemRoutes = require("./routes/customItemRoutes");
 
 app.use("/api/airlines", airlineRoutes);
 app.use("/api/suitcases", suitcaseRoutes);
 app.use("/api/items", itemRoutes);
+app.use("/api/custom-items", customItemRoutes);
 app.use("/api/size-multipliers", sizeRoutes);
 app.use("/api/calculate", calculateRoutes);
 app.use("/api/auth", authRoutes);
