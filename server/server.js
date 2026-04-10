@@ -35,7 +35,7 @@ const packingTemplateRoutes = require("./routes/packingTemplateRoutes");
 const airlineRoutes = require("./routes/airlineRoutes");
 const bagRoutes = require("./routes/bagRoutes");
 const tripBagRecommendationRoutes = require("./routes/tripBagRecommendationRoutes");
-
+const tripItemSuggestionRoutes = require("./routes/tripItemSuggestionRoutes");
 
 app.use("/api/airlines", airlineRoutes);
 app.use("/api/suitcases", suitcaseRoutes);
@@ -49,6 +49,8 @@ app.use("/api/trips", tripItemRoutes);
 app.use("/api/trips", tripCalculationRoutes);
 app.use("/api/trips", tripSuggestionRoutes);
 app.use("/api/trips", tripBagRecommendationRoutes);
+app.use("/api/trips", tripItemSuggestionRoutes);
+
 app.use("/api/users", userRoutes);
 app.use("/api/saved-suitcases", savedSuitcaseRoutes);
 app.use("/api/packing-templates", packingTemplateRoutes);
