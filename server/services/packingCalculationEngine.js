@@ -73,8 +73,10 @@ function getPreferredBagTypesForItem(item) {
       ...item,
       displayName: getItemDisplayName(item),
       quantity: Number(item.quantity || 1),
-      baseVolumeCm3: Number(item.base_volume_cm3 || 0),
-      baseWeightG: Number(item.base_weight_g || 0),
+      baseVolumeCm3: Number(item.effective_volume_cm3 || item.base_volume_cm3 || 0),
+      baseWeightG: Number(item.effective_weight_g || item.base_weight_g || 0),
+      resolvedSizeCode: item.resolved_size_code || item.size_code || null,
+      resolvedFoldType: item.resolved_fold_type || item.fold_type || null,
       travel_day_mode: item.travel_day_mode || "normal",
       packing_status: item.packing_status || "pending",
       priorityScore: getItemPriorityScore(item),
@@ -122,6 +124,8 @@ function getPreferredBagTypesForItem(item) {
           weightG: itemTotalWeight,
           travelDayMode: item.travel_day_mode,
           packingStatus: item.packing_status,
+          sizeCode: item.resolvedSizeCode || null,
+          foldType: item.resolvedFoldType || null,  
         });
   
         return {

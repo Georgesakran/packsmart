@@ -2,6 +2,7 @@ const queryAsync = require("../utils/queryAsync");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 const { calculatePackingResult } = require("../services/packingCalculationEngine");
 const { logTripActivity } = require("../utils/tripActivityLogger");
+const { resolveTripItemPackingProfile } = require("../services/packingProfileResolver");
 
 const getOwnedTrip = async (tripId, userId) => {
   const rows = await queryAsync(
@@ -66,10 +67,16 @@ const calculateTrip = async (req, res) => {
       [id]
     );
 
+    const resolvedTripItems = [];
+    for (const item of tripItems) {
+      const resolved = await resolveTripItemPackingProfile(item);
+      resolvedTripItems.push(resolved);
+    }
+    
     const result = calculatePackingResult({
       trip,
       selectedBags,
-      tripItems,
+      tripItems: resolvedTripItems,
     });
 
     const existingRows = await queryAsync(

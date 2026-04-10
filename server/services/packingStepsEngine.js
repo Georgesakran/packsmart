@@ -6,8 +6,10 @@ function normalizeText(value = "") {
     const category = normalizeText(item.category);
     const name = normalizeText(item.name);
   
+    if (item.foldType) return item.foldType;
+    if (item.fold_type) return item.fold_type;
     if (item.stepType === "wear_on_travel_day") return "wear_directly";
-  
+      
     if (category === "documents" || category === "tech" || category === "toiletries") {
       return "no_fold";
     }
