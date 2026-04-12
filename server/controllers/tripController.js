@@ -162,7 +162,8 @@ const getTrips = (req, res) => {
         console.error("Get trips error:", err.message);
         return res.status(500).json({ message: "Server error" });
       }
-    return successResponse(res, "Trips fetched successfully", results);    });
+      return successResponse(res, "Trips fetched successfully", results);
+    });
   } catch (error) {
     console.error("Get trips catch error:", error.message);
     return res.status(500).json({ message: "Server error" });

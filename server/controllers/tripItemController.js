@@ -814,8 +814,8 @@ const getTripItemsSummary = async (req, res) => {
       [tripId]
     );
 
-    return res.status(200).json(rows[0] || {});
-  } catch (error) {
+    return successResponse(res, "Trip items summary fetched successfully", rows[0] || {});
+    } catch (error) {
     console.error("Get trip items summary error:", error.message);
     return res.status(500).json({ message: "Server error" });
   }

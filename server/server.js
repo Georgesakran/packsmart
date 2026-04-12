@@ -38,7 +38,13 @@ const tripBagRecommendationRoutes = require("./routes/tripBagRecommendationRoute
 const tripItemSuggestionRoutes = require("./routes/tripItemSuggestionRoutes");
 const tripPackingStepsRoutes = require("./routes/tripPackingStepsRoutes");
 const customItemRoutes = require("./routes/customItemRoutes");
+const travelPresetRoutes = require("./routes/travelPresetRoutes");
+const notificationPreferenceRoutes = require("./routes/notificationPreferenceRoutes");
+const tripReminderRoutes = require("./routes/tripReminderRoutes");
 
+
+app.use("/api", notificationPreferenceRoutes);
+app.use("/api", tripReminderRoutes);
 app.use("/api/airlines", airlineRoutes);
 app.use("/api/suitcases", suitcaseRoutes);
 app.use("/api/items", itemRoutes);
@@ -58,6 +64,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/saved-suitcases", savedSuitcaseRoutes);
 app.use("/api/packing-templates", packingTemplateRoutes);
 app.use("/api/bags", bagRoutes);
+app.use("/api", travelPresetRoutes);
+
+
 
 const PORT = process.env.PORT || 5000;
 
