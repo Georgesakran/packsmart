@@ -111,49 +111,77 @@ const getTrips = (req, res) => {
       SELECT
         t.*,
 
-        COUNT(DISTINCT ts.id) AS bags_count,
-        COUNT(DISTINCT ti.id) AS items_count,
+        COALESCE(ts_summary.bags_count, 0) AS bags_count,
+        COALESCE(ti_summary.items_count, 0) AS items_count,
 
         CASE
-          WHEN tr.trip_id IS NOT NULL THEN 1
+          WHEN tr_summary.trip_id IS NOT NULL THEN 1
           ELSE 0
         END AS has_results,
 
         CASE
-          WHEN tr.overall_fits = 1 THEN 1
+          WHEN tr_summary.overall_fits = 1 THEN 1
           ELSE 0
         END AS overall_fits,
 
-        CASE
-          WHEN SUM(
-            CASE
-              WHEN ti.packing_status IS NOT NULL AND ti.packing_status <> 'pending'
-              THEN 1
-              ELSE 0
-            END
-          ) > 0
-          THEN 1
-          ELSE 0
-        END AS checklist_started,
-
-        CASE
-          WHEN SUM(
-            CASE
-              WHEN ti.travel_day_mode IS NOT NULL AND ti.travel_day_mode <> 'normal'
-              THEN 1
-              ELSE 0
-            END
-          ) > 0
-          THEN 1
-          ELSE 0
-        END AS travel_day_configured
+        COALESCE(ti_summary.checklist_started, 0) AS checklist_started,
+        COALESCE(ti_summary.travel_day_configured, 0) AS travel_day_configured
 
       FROM trips t
-      LEFT JOIN trip_suitcases ts ON ts.trip_id = t.id
-      LEFT JOIN trip_items ti ON ti.trip_id = t.id
-      LEFT JOIN trip_results tr ON tr.trip_id = t.id
+
+      LEFT JOIN (
+        SELECT
+          trip_id,
+          COUNT(*) AS bags_count
+        FROM trip_suitcases
+        GROUP BY trip_id
+      ) ts_summary
+        ON ts_summary.trip_id = t.id
+
+      LEFT JOIN (
+        SELECT
+          trip_id,
+          COUNT(*) AS items_count,
+          CASE
+            WHEN SUM(
+              CASE
+                WHEN packing_status IS NOT NULL AND packing_status <> 'pending'
+                THEN 1
+                ELSE 0
+              END
+            ) > 0
+            THEN 1
+            ELSE 0
+          END AS checklist_started,
+          CASE
+            WHEN SUM(
+              CASE
+                WHEN travel_day_mode IS NOT NULL AND travel_day_mode <> 'normal'
+                THEN 1
+                ELSE 0
+              END
+            ) > 0
+            THEN 1
+            ELSE 0
+          END AS travel_day_configured
+        FROM trip_items
+        GROUP BY trip_id
+      ) ti_summary
+        ON ti_summary.trip_id = t.id
+
+      LEFT JOIN (
+        SELECT tr1.trip_id, tr1.overall_fits
+        FROM trip_results tr1
+        INNER JOIN (
+          SELECT trip_id, MAX(id) AS latest_result_id
+          FROM trip_results
+          GROUP BY trip_id
+        ) latest_tr
+          ON latest_tr.latest_result_id = tr1.id
+      ) tr_summary
+        ON tr_summary.trip_id = t.id
+
       WHERE t.user_id = ?
-      GROUP BY t.id
       ORDER BY t.created_at DESC
     `;
 
@@ -162,6 +190,7 @@ const getTrips = (req, res) => {
         console.error("Get trips error:", err.message);
         return res.status(500).json({ message: "Server error" });
       }
+
       return successResponse(res, "Trips fetched successfully", results);
     });
   } catch (error) {
