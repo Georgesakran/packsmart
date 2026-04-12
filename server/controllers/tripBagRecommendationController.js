@@ -64,7 +64,6 @@ const saveSelectedTripBags = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
     const { selectedBags = [] } = req.body;
-    console.log(selectedBags);
 
     const trip = await getOwnedTrip(id, userId);
     if (!trip) {
@@ -75,9 +74,16 @@ const saveSelectedTripBags = async (req, res) => {
       return errorResponse(res, "selectedBags array is required", 400);
     }
 
+    // 1) reset selected bags snapshot
     await queryAsync(`DELETE FROM trip_selected_bags WHERE trip_id = ?`, [id]);
 
+    // 2) reset actual trip suitcases so the trip summary stays correct
+    await queryAsync(`DELETE FROM trip_suitcases WHERE trip_id = ?`, [id]);
+
+    let primaryAssigned = false;
+
     for (const bag of selectedBags) {
+      // Save selection record
       await queryAsync(
         `
         INSERT INTO trip_selected_bags (
@@ -97,6 +103,64 @@ const saveSelectedTripBags = async (req, res) => {
           bag.isRecommended ? 1 : 0,
         ]
       );
+
+      // Fetch actual bag details from catalog
+      const bagCatalogRows = await queryAsync(
+        `
+        SELECT *
+        FROM bag_catalog
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [bag.bagCatalogId]
+      );
+
+      if (bagCatalogRows.length === 0) {
+        continue;
+      }
+
+      const catalogBag = bagCatalogRows[0];
+      const quantity = Number(bag.quantity || 1);
+
+      for (let i = 0; i < quantity; i += 1) {
+        const isPrimary = !primaryAssigned ? 1 : 0;
+
+        await queryAsync(
+          `
+          INSERT INTO trip_suitcases (
+            trip_id,
+            suitcase_type,
+            name,
+            volume_cm3,
+            max_weight_kg,
+            length_cm,
+            width_cm,
+            height_cm,
+            is_custom,
+            bag_role,
+            is_primary
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            id,
+            "preset",
+            catalogBag.name,
+            catalogBag.volume_cm3 || 0,
+            catalogBag.max_weight_kg || 0,
+            catalogBag.length_cm || null,
+            catalogBag.width_cm || null,
+            catalogBag.height_cm || null,
+            0,
+            bag.roleLabel || catalogBag.bag_type || "main",
+            isPrimary,
+          ]
+        );
+
+        if (!primaryAssigned) {
+          primaryAssigned = true;
+        }
+      }
     }
 
     return successResponse(res, "Selected trip bags saved successfully");
