@@ -64,6 +64,7 @@ const saveSelectedTripBags = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
     const { selectedBags = [] } = req.body;
+    console.log(selectedBags);
 
     const trip = await getOwnedTrip(id, userId);
     if (!trip) {
