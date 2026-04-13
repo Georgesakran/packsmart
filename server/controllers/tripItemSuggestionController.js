@@ -30,13 +30,19 @@ const getSuggestedItemsForTrip = async (req, res) => {
     const selectedBags = await queryAsync(
       `
       SELECT
-        tsb.*,
-        bc.name,
-        bc.bag_type,
-        bc.volume_cm3
-      FROM trip_selected_bags tsb
-      JOIN bag_catalog bc ON tsb.bag_catalog_id = bc.id
-      WHERE tsb.trip_id = ?
+        id,
+        trip_id,
+        name,
+        bag_role AS bag_type,
+        volume_cm3,
+        max_weight_kg,
+        length_cm,
+        width_cm,
+        height_cm,
+        is_primary
+      FROM trip_suitcases
+      WHERE trip_id = ?
+      ORDER BY is_primary DESC, created_at ASC, id ASC
       `,
       [id]
     );

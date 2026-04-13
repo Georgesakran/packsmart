@@ -31,25 +31,22 @@ const calculateTrip = async (req, res) => {
     const selectedBags = await queryAsync(
       `
       SELECT
-        tsb.id,
-        tsb.trip_id,
-        tsb.bag_catalog_id,
-        tsb.quantity,
-        tsb.role_label,
-        tsb.is_recommended,
-        bc.name,
-        bc.brand,
-        bc.bag_type,
-        bc.length_cm,
-        bc.width_cm,
-        bc.height_cm,
-        bc.volume_cm3,
-        bc.empty_weight_kg,
-        bc.max_weight_kg
-      FROM trip_selected_bags tsb
-      JOIN bag_catalog bc ON tsb.bag_catalog_id = bc.id
-      WHERE tsb.trip_id = ?
-      ORDER BY tsb.created_at ASC
+        id,
+        trip_id,
+        name,
+        suitcase_type,
+        bag_role AS role_label,
+        bag_role AS bag_type,
+        length_cm,
+        width_cm,
+        height_cm,
+        volume_cm3,
+        max_weight_kg,
+        is_primary,
+        created_at
+      FROM trip_suitcases
+      WHERE trip_id = ?
+      ORDER BY is_primary DESC, created_at ASC, id ASC
       `,
       [id]
     );

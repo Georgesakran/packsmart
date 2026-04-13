@@ -115,12 +115,12 @@ const getTrips = (req, res) => {
         COALESCE(ti_summary.items_count, 0) AS items_count,
 
         CASE
-          WHEN tr_summary.trip_id IS NOT NULL THEN 1
+          WHEN tr.trip_id IS NOT NULL THEN 1
           ELSE 0
         END AS has_results,
 
         CASE
-          WHEN tr_summary.overall_fits = 1 THEN 1
+          WHEN tr.overall_fits = 1 THEN 1
           ELSE 0
         END AS overall_fits,
 
@@ -169,17 +169,8 @@ const getTrips = (req, res) => {
       ) ti_summary
         ON ti_summary.trip_id = t.id
 
-      LEFT JOIN (
-        SELECT tr1.trip_id, tr1.overall_fits
-        FROM trip_results tr1
-        INNER JOIN (
-          SELECT trip_id, MAX(id) AS latest_result_id
-          FROM trip_results
-          GROUP BY trip_id
-        ) latest_tr
-          ON latest_tr.latest_result_id = tr1.id
-      ) tr_summary
-        ON tr_summary.trip_id = t.id
+      LEFT JOIN trip_results tr
+        ON tr.trip_id = t.id
 
       WHERE t.user_id = ?
       ORDER BY t.created_at DESC

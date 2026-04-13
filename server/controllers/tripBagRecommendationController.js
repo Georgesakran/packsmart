@@ -74,37 +74,11 @@ const saveSelectedTripBags = async (req, res) => {
       return errorResponse(res, "selectedBags array is required", 400);
     }
 
-    // 1) reset selected bags snapshot
-    await queryAsync(`DELETE FROM trip_selected_bags WHERE trip_id = ?`, [id]);
-
-    // 2) reset actual trip suitcases so the trip summary stays correct
     await queryAsync(`DELETE FROM trip_suitcases WHERE trip_id = ?`, [id]);
 
     let primaryAssigned = false;
 
     for (const bag of selectedBags) {
-      // Save selection record
-      await queryAsync(
-        `
-        INSERT INTO trip_selected_bags (
-          trip_id,
-          bag_catalog_id,
-          quantity,
-          role_label,
-          is_recommended
-        )
-        VALUES (?, ?, ?, ?, ?)
-        `,
-        [
-          id,
-          bag.bagCatalogId,
-          bag.quantity || 1,
-          bag.roleLabel || null,
-          bag.isRecommended ? 1 : 0,
-        ]
-      );
-
-      // Fetch actual bag details from catalog
       const bagCatalogRows = await queryAsync(
         `
         SELECT *
@@ -123,7 +97,7 @@ const saveSelectedTripBags = async (req, res) => {
       const quantity = Number(bag.quantity || 1);
 
       for (let i = 0; i < quantity; i += 1) {
-        const isPrimary = !primaryAssigned ? 1 : 0;
+        const isPrimary = primaryAssigned ? 0 : 1;
 
         await queryAsync(
           `
@@ -183,20 +157,22 @@ const getSelectedTripBags = async (req, res) => {
     const rows = await queryAsync(
       `
       SELECT
-        tsb.*,
-        bc.name,
-        bc.brand,
-        bc.bag_type,
-        bc.length_cm,
-        bc.width_cm,
-        bc.height_cm,
-        bc.volume_cm3,
-        bc.empty_weight_kg,
-        bc.max_weight_kg
-      FROM trip_selected_bags tsb
-      JOIN bag_catalog bc ON tsb.bag_catalog_id = bc.id
-      WHERE tsb.trip_id = ?
-      ORDER BY tsb.created_at ASC
+        id,
+        trip_id,
+        suitcase_type,
+        name,
+        volume_cm3,
+        max_weight_kg,
+        length_cm,
+        width_cm,
+        height_cm,
+        is_custom,
+        bag_role,
+        is_primary,
+        created_at
+      FROM trip_suitcases
+      WHERE trip_id = ?
+      ORDER BY is_primary DESC, created_at ASC, id ASC
       `,
       [id]
     );
