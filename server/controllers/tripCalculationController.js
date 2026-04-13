@@ -3,6 +3,7 @@ const { successResponse, errorResponse } = require("../utils/apiResponse");
 const { calculatePackingResult } = require("../services/packingCalculationEngine");
 const { logTripActivity } = require("../utils/tripActivityLogger");
 const { resolveTripItemPackingProfile } = require("../services/packingProfileResolver");
+const { buildVisualPackingPlan } = require("../services/packingPlacementEngine");
 
 const getOwnedTrip = async (tripId, userId) => {
   const rows = await queryAsync(
@@ -76,6 +77,11 @@ const calculateTrip = async (req, res) => {
       tripItems: resolvedTripItems,
     });
 
+    const visualPackingPlan = buildVisualPackingPlan({
+      selectedBags,
+      calculationResult: result,
+    });
+
     const existingRows = await queryAsync(
       `
       SELECT id
@@ -101,6 +107,7 @@ const calculateTrip = async (req, res) => {
       JSON.stringify(result.bagResults || []),
       JSON.stringify(result.travelDay || {}),
       JSON.stringify(result.fixSuggestions || []),
+      JSON.stringify(visualPackingPlan || null),
     ];
 
     if (existingRows.length > 0) {
@@ -121,7 +128,8 @@ const calculateTrip = async (req, res) => {
           overflow_json = ?,
           bag_results_json = ?,
           travel_day_json = ?,
-          fix_suggestions_json = ?
+          fix_suggestions_json = ?,
+          visual_packing_plan_json = ?
         WHERE trip_id = ?
         `,
         [...values, id]
@@ -144,9 +152,10 @@ const calculateTrip = async (req, res) => {
           overflow_json,
           bag_results_json,
           travel_day_json,
-          fix_suggestions_json
+          fix_suggestions_json,
+          visual_packing_plan_json
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [id, ...values]
       );
@@ -213,6 +222,9 @@ const getTripResults = async (req, res) => {
       fixSuggestions: raw.fix_suggestions_json
         ? JSON.parse(raw.fix_suggestions_json)
         : [],
+      visualPackingPlan: raw.visual_packing_plan_json
+        ? JSON.parse(raw.visual_packing_plan_json)
+        : null,
     };
 
     return successResponse(res, "Trip results fetched successfully", result);
