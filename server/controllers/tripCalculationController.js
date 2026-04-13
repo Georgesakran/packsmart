@@ -4,6 +4,7 @@ const { calculatePackingResult } = require("../services/packingCalculationEngine
 const { logTripActivity } = require("../utils/tripActivityLogger");
 const { resolveTripItemPackingProfile } = require("../services/packingProfileResolver");
 const { buildVisualPackingPlan } = require("../services/packingPlacementEngine");
+const { buildPackingScene } = require("../services/packingSceneEngine");
 
 const getOwnedTrip = async (tripId, userId) => {
   const rows = await queryAsync(
@@ -82,6 +83,10 @@ const calculateTrip = async (req, res) => {
       calculationResult: result,
     });
 
+    const packingScene = buildPackingScene({
+      visualPackingPlan,
+    });
+
     const existingRows = await queryAsync(
       `
       SELECT id
@@ -108,6 +113,7 @@ const calculateTrip = async (req, res) => {
       JSON.stringify(result.travelDay || {}),
       JSON.stringify(result.fixSuggestions || []),
       JSON.stringify(visualPackingPlan || null),
+      JSON.stringify(packingScene || null),
     ];
 
     if (existingRows.length > 0) {
@@ -129,7 +135,8 @@ const calculateTrip = async (req, res) => {
           bag_results_json = ?,
           travel_day_json = ?,
           fix_suggestions_json = ?,
-          visual_packing_plan_json = ?
+          visual_packing_plan_json = ?,
+          packing_scene_json = ?
         WHERE trip_id = ?
         `,
         [...values, id]
@@ -153,9 +160,10 @@ const calculateTrip = async (req, res) => {
           bag_results_json,
           travel_day_json,
           fix_suggestions_json,
-          visual_packing_plan_json
+          visual_packing_plan_json,
+          packing_scene_json
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [id, ...values]
       );
@@ -224,6 +232,9 @@ const getTripResults = async (req, res) => {
         : [],
       visualPackingPlan: raw.visual_packing_plan_json
         ? JSON.parse(raw.visual_packing_plan_json)
+        : null,
+      packingScene: raw.packing_scene_json
+        ? JSON.parse(raw.packing_scene_json)
         : null,
     };
 
