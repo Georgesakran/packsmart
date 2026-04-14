@@ -3,7 +3,6 @@ const { successResponse, errorResponse } = require("../utils/apiResponse");
 const { calculatePackingResult } = require("../services/packingCalculationEngine");
 const { logTripActivity } = require("../utils/tripActivityLogger");
 const { resolveTripItemPackingProfile } = require("../services/packingProfileResolver");
-const { buildVisualPackingPlan } = require("../services/packingPlacementEngine");
 const { buildPackingScene } = require("../services/packingSceneEngine");
 
 const getOwnedTrip = async (tripId, userId) => {
@@ -18,6 +17,15 @@ const getOwnedTrip = async (tripId, userId) => {
   );
 
   return rows[0] || null;
+};
+
+const safeJsonParse = (value, fallback) => {
+  try {
+    if (!value) return fallback;
+    return JSON.parse(value);
+  } catch (error) {
+    return fallback;
+  }
 };
 
 const calculateTrip = async (req, res) => {
@@ -71,21 +79,28 @@ const calculateTrip = async (req, res) => {
       const resolved = await resolveTripItemPackingProfile(item);
       resolvedTripItems.push(resolved);
     }
-    
+
     const result = calculatePackingResult({
       trip,
       selectedBags,
       tripItems: resolvedTripItems,
     });
 
-    const visualPackingPlan = buildVisualPackingPlan({
-      selectedBags,
-      calculationResult: result,
-    });
+    const primaryBag =
+      Array.isArray(selectedBags) && selectedBags.length > 0
+        ? selectedBags[0]
+        : null;
 
-    const packingScene = buildPackingScene({
-      visualPackingPlan,
-    });
+    let simulationScene = null;
+
+    if (primaryBag) {
+      simulationScene = buildPackingScene({
+        tripId: Number(id),
+        bag: primaryBag,
+        bags: selectedBags,
+        tripItems: resolvedTripItems,
+      });
+    }
 
     const existingRows = await queryAsync(
       `
@@ -97,7 +112,7 @@ const calculateTrip = async (req, res) => {
       [id]
     );
 
-    const values = [
+    const baseValues = [
       result.overallFits ? 1 : 0,
       result.totalAvailableVolumeCm3,
       result.totalUsedVolumeCm3,
@@ -112,8 +127,9 @@ const calculateTrip = async (req, res) => {
       JSON.stringify(result.bagResults || []),
       JSON.stringify(result.travelDay || {}),
       JSON.stringify(result.fixSuggestions || []),
-      JSON.stringify(visualPackingPlan || null),
-      JSON.stringify(packingScene || null),
+      JSON.stringify(simulationScene || null),
+      1,
+      new Date(),
     ];
 
     if (existingRows.length > 0) {
@@ -135,11 +151,12 @@ const calculateTrip = async (req, res) => {
           bag_results_json = ?,
           travel_day_json = ?,
           fix_suggestions_json = ?,
-          visual_packing_plan_json = ?,
-          packing_scene_json = ?
+          simulation_scene_json = ?,
+          simulation_scene_version = ?,
+          simulation_generated_at = ?
         WHERE trip_id = ?
         `,
-        [...values, id]
+        [...baseValues, id]
       );
     } else {
       await queryAsync(
@@ -160,12 +177,13 @@ const calculateTrip = async (req, res) => {
           bag_results_json,
           travel_day_json,
           fix_suggestions_json,
-          visual_packing_plan_json,
-          packing_scene_json
+          simulation_scene_json,
+          simulation_scene_version,
+          simulation_generated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-        [id, ...values]
+        [id, ...baseValues]
       );
     }
 
@@ -179,7 +197,10 @@ const calculateTrip = async (req, res) => {
         : "Trip calculation completed and the current setup needs adjustment.",
     });
 
-    return successResponse(res, "Trip calculated successfully", result);
+    return successResponse(res, "Trip calculated successfully", {
+      ...result,
+      simulationScene,
+    });
   } catch (error) {
     console.error("Calculate trip error:", error.message);
     return errorResponse(res, "Server error", 500);
@@ -223,19 +244,14 @@ const getTripResults = async (req, res) => {
       totalFreeWeightG: Number(raw.total_free_weight_g || 0),
       overflowItemCount: Number(raw.overflow_item_count || 0),
       wornOnTravelDayCount: Number(raw.worn_on_travel_day_count || 0),
-      warnings: raw.warnings_json ? JSON.parse(raw.warnings_json) : [],
-      overflowItems: raw.overflow_json ? JSON.parse(raw.overflow_json) : [],
-      bagResults: raw.bag_results_json ? JSON.parse(raw.bag_results_json) : [],
-      travelDay: raw.travel_day_json ? JSON.parse(raw.travel_day_json) : {},
-      fixSuggestions: raw.fix_suggestions_json
-        ? JSON.parse(raw.fix_suggestions_json)
-        : [],
-      visualPackingPlan: raw.visual_packing_plan_json
-        ? JSON.parse(raw.visual_packing_plan_json)
-        : null,
-      packingScene: raw.packing_scene_json
-        ? JSON.parse(raw.packing_scene_json)
-        : null,
+      warnings: safeJsonParse(raw.warnings_json, []),
+      overflowItems: safeJsonParse(raw.overflow_json, []),
+      bagResults: safeJsonParse(raw.bag_results_json, []),
+      travelDay: safeJsonParse(raw.travel_day_json, {}),
+      fixSuggestions: safeJsonParse(raw.fix_suggestions_json, []),
+      simulationScene: safeJsonParse(raw.simulation_scene_json, null),
+      simulationSceneVersion: Number(raw.simulation_scene_version || 0) || 1,
+      simulationGeneratedAt: raw.simulation_generated_at || null,
     };
 
     return successResponse(res, "Trip results fetched successfully", result);

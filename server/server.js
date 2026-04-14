@@ -41,6 +41,8 @@ const customItemRoutes = require("./routes/customItemRoutes");
 const travelPresetRoutes = require("./routes/travelPresetRoutes");
 const notificationPreferenceRoutes = require("./routes/notificationPreferenceRoutes");
 const tripReminderRoutes = require("./routes/tripReminderRoutes");
+const tripSimulationRoutes = require("./routes/tripSimulationRoutes");
+
 
 
 app.use("/api", notificationPreferenceRoutes);
@@ -65,6 +67,7 @@ app.use("/api/saved-suitcases", savedSuitcaseRoutes);
 app.use("/api/packing-templates", packingTemplateRoutes);
 app.use("/api/bags", bagRoutes);
 app.use("/api", travelPresetRoutes);
+app.use("/api", tripSimulationRoutes);
 
 
 
