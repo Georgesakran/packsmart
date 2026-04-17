@@ -465,6 +465,8 @@ function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
         supportingItems: supportCheck.supportingItems,
         totalScore: scored.totalScore,
         scoreBreakdown: scored.breakdown,
+        placementIssues: scored.issues || [],
+        placementSuggestions: scored.suggestions || [],
       };
 
       if (!bestCandidate || evaluated.totalScore > bestCandidate.totalScore) {
@@ -590,6 +592,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
           compressionAppliedRatio: candidate.compressionAppliedRatio,
           placementScore: candidate.totalScore,
           placementScoreBreakdown: candidate.scoreBreakdown,
+          placementIssues: candidate.placementIssues || [],
         };
 
         if (
