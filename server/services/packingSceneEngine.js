@@ -6,6 +6,8 @@ const {
   getCenter,
 } = require("./packingGeometry");
 const { resolveOrientations } = require("./packingOrientationResolver");
+const { buildPackingItemPhysicsProfile } = require("./packingItemPhysicsProfile");
+const { scorePlacementCandidate } = require("./packingPlacementScoring");
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -50,39 +52,6 @@ function buildRenderHint(item) {
       icon: "item",
     }
   );
-}
-
-function isSoftCategory(category = "") {
-  const normalized = String(category).toLowerCase();
-  return [
-    "underwear",
-    "accessories",
-    "clothing",
-    "bottoms",
-    "outerwear",
-  ].includes(normalized);
-}
-
-function isHighlyCompressible(category = "") {
-  const normalized = String(category).toLowerCase();
-  return ["underwear", "accessories", "clothing"].includes(normalized);
-}
-
-function isStackFriendly(category = "") {
-  const normalized = String(category).toLowerCase();
-  return [
-    "underwear",
-    "accessories",
-    "clothing",
-    "bottoms",
-    "outerwear",
-    "documents",
-  ].includes(normalized);
-}
-
-function isRigidBase(category = "") {
-  const normalized = String(category).toLowerCase();
-  return ["shoes", "toiletries", "tech"].includes(normalized);
 }
 
 function getPreferredZones(item) {
@@ -166,41 +135,15 @@ function estimateItemDimensionsCm(item) {
   const volume = Number(item.effective_volume_cm3 || item.base_volume_cm3 || 0);
   const category = String(item.category || "").toLowerCase();
 
-  if (category === "documents") {
-    return { w: 12, h: 2, d: 9 };
-  }
-
-  if (category === "tech") {
-    return { w: 13, h: 4, d: 9 };
-  }
-
-  if (category === "toiletries") {
-    return { w: 16, h: 6, d: 10 };
-  }
-
-  if (category === "shoes") {
-    return { w: 18, h: 11, d: 13 };
-  }
-
-  if (category === "underwear") {
-    return { w: 7, h: 4, d: 6 };
-  }
-
-  if (category === "accessories") {
-    return { w: 9, h: 4, d: 7 };
-  }
-
-  if (category === "bottoms") {
-    return { w: 18, h: 4, d: 12 };
-  }
-
-  if (category === "outerwear") {
-    return { w: 19, h: 7, d: 13 };
-  }
-
-  if (category === "clothing") {
-    return { w: 16, h: 4, d: 11 };
-  }
+  if (category === "documents") return { w: 12, h: 2, d: 9 };
+  if (category === "tech") return { w: 13, h: 4, d: 9 };
+  if (category === "toiletries") return { w: 16, h: 6, d: 10 };
+  if (category === "shoes") return { w: 18, h: 11, d: 13 };
+  if (category === "underwear") return { w: 7, h: 4, d: 6 };
+  if (category === "accessories") return { w: 9, h: 4, d: 7 };
+  if (category === "bottoms") return { w: 18, h: 4, d: 12 };
+  if (category === "outerwear") return { w: 19, h: 7, d: 13 };
+  if (category === "clothing") return { w: 16, h: 4, d: 11 };
 
   const cube = Math.max(4, Math.cbrt(Math.max(64, volume)));
   return {
@@ -214,7 +157,7 @@ function normalizeSceneItems(tripItems = []) {
   return tripItems.map((item) => {
     const weightG = Number(item.effective_weight_g || item.base_weight_g || 0);
 
-    return {
+    const normalized = {
       tripItemId: item.id,
       itemId: item.item_id || null,
       name: item.custom_name || item.base_item_name || "Item",
@@ -226,40 +169,21 @@ function normalizeSceneItems(tripItems = []) {
       travel_day_mode: item.travel_day_mode || "normal",
       renderHint: buildRenderHint(item),
     };
+
+    normalized.physicsProfile = buildPackingItemPhysicsProfile(normalized);
+    return normalized;
   });
 }
 
-function applyCompressionRules(item, orientation, zoneKey, supportType = "floor") {
-  const category = String(item.category || "").toLowerCase();
-  const base = orientation.sizeCm;
+function dedupeCandidates(candidates = []) {
+  const seen = new Set();
 
-  let w = Number(base.w || 0);
-  let h = Number(base.h || 0);
-  let d = Number(base.d || 0);
-
-  if (isHighlyCompressible(category)) {
-    h *= supportType === "stack" ? 0.7 : 0.82;
-    d *= zoneKey === "side_channel_left" || zoneKey === "side_channel_right" ? 0.82 : 0.9;
-  } else if (isSoftCategory(category)) {
-    h *= supportType === "stack" ? 0.78 : 0.88;
-    d *= 0.94;
-  }
-
-  if (category === "underwear") {
-    w *= 0.9;
-    d *= 0.82;
-    h *= 0.76;
-  }
-
-  if (category === "documents") {
-    h *= 0.9;
-  }
-
-  return {
-    w: Math.max(2, Math.round(w * 10) / 10),
-    h: Math.max(1, Math.round(h * 10) / 10),
-    d: Math.max(2, Math.round(d * 10) / 10),
-  };
+  return candidates.filter((c) => {
+    const key = `${Math.round(c.x * 10)}-${Math.round(c.y * 10)}-${Math.round(c.z * 10)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function getZonePlacementCandidates(zone, sizeCm, item) {
@@ -273,7 +197,6 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   const maxZ = b.z + b.d - sizeCm.d;
 
   const centerX = b.x + (b.w - sizeCm.w) / 2;
-  const centerY = b.y + (b.h - sizeCm.h) / 2;
   const centerZ = b.z + (b.d - sizeCm.d) / 2;
 
   const category = String(item.category || "").toLowerCase();
@@ -301,8 +224,8 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   ) {
     candidates.push(
       { x: minX, y: minY, z: minZ },
-      { x: minX, y: centerY, z: minZ },
-      { x: minX, y: minY, z: centerZ }
+      { x: minX, y: minY, z: centerZ },
+      { x: minX, y: maxY, z: minZ }
     );
   } else {
     candidates.push(
@@ -332,20 +255,6 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   );
 }
 
-function dedupeCandidates(candidates = []) {
-  const seen = new Set();
-  return candidates.filter((c) => {
-    const key = `${Math.round(c.x * 10)}-${Math.round(c.y * 10)}-${Math.round(c.z * 10)}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function rangesOverlap(startA, endA, startB, endB) {
-  return Math.max(startA, startB) < Math.min(endA, endB);
-}
-
 function getOverlapLength(startA, endA, startB, endB) {
   return Math.max(0, Math.min(endA, endB) - Math.max(startA, startB));
 }
@@ -353,7 +262,8 @@ function getOverlapLength(startA, endA, startB, endB) {
 function getSupportCandidates(zone, placedItems, item, sizeCm) {
   const supportCandidates = [{ y: zone.boundsCm.y, supportType: "floor", supportItems: [] }];
 
-  if (!isStackFriendly(item.category)) {
+  const profile = item.physicsProfile || {};
+  if (!profile.canStackOnTopOfOthers && profile.supportNeedScore >= 60) {
     return supportCandidates;
   }
 
@@ -361,22 +271,17 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
 
   for (const placed of zonePlaced) {
     const topY = Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
-
     if (topY + sizeCm.h > zone.boundsCm.y + zone.boundsCm.h) continue;
 
-    const placedCategory = String(placed.category || "").toLowerCase();
-
-    if (
-      isRigidBase(placedCategory) ||
-      isSoftCategory(placedCategory) ||
-      placedCategory === "documents"
-    ) {
-      supportCandidates.push({
-        y: topY,
-        supportType: "stack",
-        supportItems: [placed],
-      });
+    if (!placed.canBeStackBase && Number(placed.stackabilityScore || 0) < 55) {
+      continue;
     }
+
+    supportCandidates.push({
+      y: topY,
+      supportType: "stack",
+      supportItems: [placed],
+    });
   }
 
   return supportCandidates.sort((a, b) => a.y - b.y);
@@ -384,7 +289,7 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
 
 function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems) {
   if (nearlyEqual(positionCm.y, zone.boundsCm.y)) {
-    return true;
+    return { supported: true, supportCoverageRatio: 1, supportingItems: [] };
   }
 
   const baseY = Number(positionCm.y || 0);
@@ -392,7 +297,6 @@ function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems) {
 
   const supporters = placedItems.filter((placed) => {
     const topY = Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
-
     if (!nearlyEqual(topY, baseY, 0.1)) return false;
 
     const xOverlap = getOverlapLength(
@@ -412,7 +316,9 @@ function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems) {
     return xOverlap > 0 && zOverlap > 0;
   });
 
-  if (!supporters.length) return false;
+  if (!supporters.length) {
+    return { supported: false, supportCoverageRatio: 0, supportingItems: [] };
+  }
 
   const totalSupportArea = supporters.reduce((sum, placed) => {
     const xOverlap = getOverlapLength(
@@ -432,11 +338,62 @@ function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems) {
     return sum + xOverlap * zOverlap;
   }, 0);
 
-  const neededArea = sizeCm.w * sizeCm.d * neededCoverageRatio;
-  return totalSupportArea >= neededArea;
+  const baseArea = sizeCm.w * sizeCm.d;
+  const supportCoverageRatio = baseArea > 0 ? totalSupportArea / baseArea : 0;
+
+  return {
+    supported: totalSupportArea >= baseArea * neededCoverageRatio,
+    supportCoverageRatio,
+    supportingItems: supporters,
+  };
 }
 
-function findPlacement(zone, orientation, placedItems, item) {
+function resolveCompressionForPlacement(item, orientation, zoneKey, supportType = "floor") {
+  const base = orientation.sizeCm;
+  const profile = item.physicsProfile || {};
+  const compressibilityScore = Number(profile.compressibilityScore || 0);
+  const minRatio = Number(profile.compressionRatioMin || 1);
+
+  let hRatio = 1;
+  let dRatio = 1;
+  let wRatio = 1;
+
+  if (compressibilityScore >= 80) {
+    hRatio = supportType === "stack" ? 0.68 : 0.8;
+    dRatio = zoneKey.includes("side_channel") ? 0.8 : 0.9;
+    wRatio = 0.94;
+  } else if (compressibilityScore >= 55) {
+    hRatio = supportType === "stack" ? 0.78 : 0.88;
+    dRatio = zoneKey.includes("side_channel") ? 0.88 : 0.95;
+    wRatio = 0.97;
+  } else if (compressibilityScore >= 20) {
+    hRatio = supportType === "stack" ? 0.9 : 0.96;
+    dRatio = 0.97;
+  }
+
+  hRatio = Math.max(minRatio, hRatio);
+  dRatio = Math.max(minRatio, dRatio);
+  wRatio = Math.max(minRatio, wRatio);
+
+  const sizeCm = {
+    w: Math.max(2, Math.round(base.w * wRatio * 10) / 10),
+    h: Math.max(1, Math.round(base.h * hRatio * 10) / 10),
+    d: Math.max(2, Math.round(base.d * dRatio * 10) / 10),
+  };
+
+  const compressionAppliedRatio = Math.min(
+    sizeCm.w / Math.max(1, base.w),
+    sizeCm.h / Math.max(1, base.h),
+    sizeCm.d / Math.max(1, base.d)
+  );
+
+  return {
+    sizeCm,
+    compressionAppliedRatio,
+  };
+}
+
+function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
   const supportCandidates = getSupportCandidates(
     zone,
     placedItems,
@@ -444,8 +401,10 @@ function findPlacement(zone, orientation, placedItems, item) {
     orientation.sizeCm
   );
 
+  let bestCandidate = null;
+
   for (const supportCandidate of supportCandidates) {
-    const compressedSize = applyCompressionRules(
+    const { sizeCm, compressionAppliedRatio } = resolveCompressionForPlacement(
       item,
       orientation,
       zone.zoneKey,
@@ -453,59 +412,68 @@ function findPlacement(zone, orientation, placedItems, item) {
     );
 
     const bounds = zone.boundsCm;
-    const maxY = bounds.y + bounds.h - compressedSize.h;
+    const maxY = bounds.y + bounds.h - sizeCm.h;
     if (supportCandidate.y > maxY) continue;
 
-    const slotCandidates = getZonePlacementCandidates(zone, compressedSize, item).map(
-      (candidate) => ({
-        ...candidate,
-        y: supportCandidate.y,
-      })
-    );
+    const slotCandidates = getZonePlacementCandidates(zone, sizeCm, item).map((candidate) => ({
+      ...candidate,
+      y: supportCandidate.y,
+    }));
 
-    for (const candidate of slotCandidates) {
-      if (!fitsInside(bounds, candidate, compressedSize)) continue;
-      if (!hasSupportForPlacement(candidate, compressedSize, zone, placedItems)) continue;
+    const denseStepX = sizeCm.w <= 8 ? 1 : 2;
+    const denseStepZ = sizeCm.d <= 8 ? 1 : 2;
 
-      const candidateBox = makeBox(candidate, compressedSize);
+    for (let z = bounds.z; z <= bounds.z + bounds.d - sizeCm.d; z += denseStepZ) {
+      for (let x = bounds.x; x <= bounds.x + bounds.w - sizeCm.w; x += denseStepX) {
+        slotCandidates.push({ x, y: supportCandidate.y, z });
+      }
+    }
+
+    for (const candidate of dedupeCandidates(slotCandidates)) {
+      if (!fitsInside(bounds, candidate, sizeCm)) continue;
+
+      const supportCheck = hasSupportForPlacement(candidate, sizeCm, zone, placedItems);
+      if (!supportCheck.supported) continue;
+
+      const candidateBox = makeBox(candidate, sizeCm);
       const collision = placedItems.some((placed) =>
         boxesOverlap(candidateBox, makeBox(placed.positionCm, placed.sizeCm))
       );
 
-      if (!collision) {
-        return {
-          positionCm: candidate,
-          sizeCm: compressedSize,
-        };
-      }
-    }
+      if (collision) continue;
 
-    const gridStepX = compressedSize.w <= 8 ? 1 : 2;
-    const gridStepZ = compressedSize.d <= 8 ? 1 : 2;
+      const scored = scorePlacementCandidate({
+        item,
+        profile: item.physicsProfile,
+        zone,
+        positionCm: candidate,
+        sizeCm,
+        orientation,
+        supportType: supportCandidate.supportType,
+        supportCoverageRatio: supportCheck.supportCoverageRatio,
+        supportingItems: supportCheck.supportingItems,
+        compressionAppliedRatio,
+        bagInner,
+      });
 
-    for (let z = bounds.z; z <= bounds.z + bounds.d - compressedSize.d; z += gridStepZ) {
-      for (let x = bounds.x; x <= bounds.x + bounds.w - compressedSize.w; x += gridStepX) {
-        const candidate = { x, y: supportCandidate.y, z };
+      const evaluated = {
+        positionCm: candidate,
+        sizeCm,
+        compressionAppliedRatio,
+        supportType: supportCandidate.supportType,
+        supportCoverageRatio: supportCheck.supportCoverageRatio,
+        supportingItems: supportCheck.supportingItems,
+        totalScore: scored.totalScore,
+        scoreBreakdown: scored.breakdown,
+      };
 
-        if (!fitsInside(bounds, candidate, compressedSize)) continue;
-        if (!hasSupportForPlacement(candidate, compressedSize, zone, placedItems)) continue;
-
-        const candidateBox = makeBox(candidate, compressedSize);
-        const collision = placedItems.some((placed) =>
-          boxesOverlap(candidateBox, makeBox(placed.positionCm, placed.sizeCm))
-        );
-
-        if (!collision) {
-          return {
-            positionCm: candidate,
-            sizeCm: compressedSize,
-          };
-        }
+      if (!bestCandidate || evaluated.totalScore > bestCandidate.totalScore) {
+        bestCandidate = evaluated;
       }
     }
   }
 
-  return null;
+  return bestCandidate;
 }
 
 function buildCameraHint(itemPlacement, bagInner) {
@@ -585,48 +553,69 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
       .filter(Boolean);
 
     const orientations = resolveOrientations(item);
-    let placed = null;
+    let bestPlacement = null;
 
     for (const zone of zoneCandidates) {
       for (const orientation of orientations) {
-        const foundPlacement = findPlacement(zone, orientation, placedItems, item);
+        const candidate = findBestPlacement(
+          zone,
+          orientation,
+          placedItems,
+          item,
+          inner
+        );
 
-        if (foundPlacement) {
-          placed = {
-            tripItemId: item.tripItemId,
-            itemId: item.itemId,
-            name: item.name,
-            category: item.category,
-            quantity: item.quantity,
-            massG: item.massG,
-            zoneKey: zone.zoneKey,
-            positionCm: foundPlacement.positionCm,
-            sizeCm: foundPlacement.sizeCm,
-            rotationDeg: orientation.rotationDeg,
-            renderHint: item.renderHint,
-            stepNumber,
-            bagId: bag.id,
-          };
-          break;
+        if (!candidate) continue;
+
+        const scoredPlacement = {
+          tripItemId: item.tripItemId,
+          itemId: item.itemId,
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          massG: item.massG,
+          zoneKey: zone.zoneKey,
+          positionCm: candidate.positionCm,
+          sizeCm: candidate.sizeCm,
+          rotationDeg: orientation.rotationDeg,
+          renderHint: item.renderHint,
+          stepNumber,
+          bagId: bag.id,
+          materialType: item.physicsProfile?.materialType || "semi_soft",
+          rigidityScore: item.physicsProfile?.rigidityScore || 0,
+          stackabilityScore: item.physicsProfile?.stackabilityScore || 0,
+          canBeStackBase: !!item.physicsProfile?.canBeStackBase,
+          supportType: candidate.supportType,
+          supportCoverageRatio: candidate.supportCoverageRatio,
+          compressionAppliedRatio: candidate.compressionAppliedRatio,
+          placementScore: candidate.totalScore,
+          placementScoreBreakdown: candidate.scoreBreakdown,
+        };
+
+        if (
+          !bestPlacement ||
+          scoredPlacement.placementScore > bestPlacement.placementScore
+        ) {
+          bestPlacement = scoredPlacement;
         }
       }
-      if (placed) break;
     }
 
-    if (!placed) {
+    if (!bestPlacement) {
       overflow.push(item);
       continue;
     }
 
-    placedItems.push(placed);
+    placedItems.push(bestPlacement);
 
     steps.push({
       stepNumber,
-      tripItemId: placed.tripItemId,
+      tripItemId: bestPlacement.tripItemId,
       bagId: bag.id,
-      instruction: `Place ${placed.name} in ${placed.zoneKey.replace(/_/g, " ")} of ${bag.name}.`,
-      highlightItemIds: [placed.tripItemId],
-      cameraHint: buildCameraHint(placed, inner),
+      instruction: `Place ${bestPlacement.name} in ${bestPlacement.zoneKey.replace(/_/g, " ")} of ${bag.name}.`,
+      highlightItemIds: [bestPlacement.tripItemId],
+      cameraHint: buildCameraHint(bestPlacement, inner),
+      placementScore: bestPlacement.placementScore,
     });
 
     stepNumber += 1;
@@ -709,7 +698,7 @@ function buildPackingScene({ tripId, bag, bags, tripItems }) {
   };
 
   return {
-    sceneVersion: 4,
+    sceneVersion: 5,
     tripId,
     generatedAt: new Date().toISOString(),
     bags: bagScenes,
@@ -730,7 +719,7 @@ function buildPackingScene({ tripId, bag, bags, tripItems }) {
       name: item.name,
       category: item.category,
       quantity: item.quantity,
-      reason: "No collision-free placement found inside the available bags.",
+      reason: "No high-quality placement found inside the available bags.",
     })),
   };
 }
