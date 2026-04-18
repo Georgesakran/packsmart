@@ -41,6 +41,7 @@ const createTripItem = async (req, res) => {
       packBehavior,
       assignedBagId,
     } = req.body;
+    
 
     const trip = await getOwnedTrip(tripId, userId);
 
@@ -50,23 +51,40 @@ const createTripItem = async (req, res) => {
       });
     }
 
-    if (!sourceType || !quantity || !baseVolumeCm3 || !baseWeightG || !packBehavior) {
+    if (!sourceType || quantity == null || Number(quantity) < 1 || !packBehavior) {
       return res.status(400).json({
         message: "Missing required fields",
       });
     }
-
+    
     if (sourceType === "database" && !itemId) {
       return res.status(400).json({
         message: "itemId is required for database items",
       });
     }
-
+    
     if (sourceType === "custom" && !customName) {
       return res.status(400).json({
         message: "customName is required for custom items",
       });
     }
+    
+    const normalizedBaseVolumeCm3 =
+      baseVolumeCm3 == null ? 1 : Number(baseVolumeCm3);
+    
+    const normalizedBaseWeightG =
+      baseWeightG == null ? 1 : Number(baseWeightG);
+    
+    if (
+      Number.isNaN(normalizedBaseVolumeCm3) ||
+      Number.isNaN(normalizedBaseWeightG) ||
+      normalizedBaseVolumeCm3 < 0 ||
+      normalizedBaseWeightG < 0
+    ) {
+      return res.status(400).json({
+        message: "Invalid volume or weight values",
+      });
+    }    
 
     const query = `
       INSERT INTO trip_items (
@@ -97,8 +115,8 @@ const createTripItem = async (req, res) => {
         sizeCode || null,
         category || null,
         audience || null,
-        baseVolumeCm3,
-        baseWeightG,
+        normalizedBaseVolumeCm3,
+        normalizedBaseWeightG,
         packBehavior,
         assignedBagId || null,
       ],
