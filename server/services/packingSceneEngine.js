@@ -132,6 +132,21 @@ function itemPriority(item) {
 }
 
 function estimateItemDimensionsCm(item) {
+  const resolvedDimensions = item.resolved_dimensions_cm || null;
+
+  if (
+    resolvedDimensions &&
+    resolvedDimensions.w != null &&
+    resolvedDimensions.h != null &&
+    resolvedDimensions.d != null
+  ) {
+    return {
+      w: Number(resolvedDimensions.w || 0),
+      h: Number(resolvedDimensions.h || 0),
+      d: Number(resolvedDimensions.d || 0),
+    };
+  }
+
   const volume = Number(item.effective_volume_cm3 || item.base_volume_cm3 || 0);
   const category = String(item.category || "").toLowerCase();
 
@@ -165,9 +180,36 @@ function normalizeSceneItems(tripItems = []) {
       quantity: Number(item.quantity || 1),
       massG: weightG,
       dimensionsCm: estimateItemDimensionsCm(item),
+
       packing_status: item.packing_status || "pending",
       travel_day_mode: item.travel_day_mode || "normal",
-      renderHint: buildRenderHint(item),
+
+      resolvedProfileKey: item.resolved_profile_key || null,
+      materialType:
+        item.resolved_material_type || item.material_type || null,
+      rigidityScore: Number(
+        item.resolved_rigidity_score || item.rigidity_score || 0
+      ),
+      compressibilityScore: Number(
+        item.resolved_compressibility_score ||
+          item.compressibility_score ||
+          0
+      ),
+      stackabilityScore: Number(
+        item.resolved_stackability_score || item.stackability_score || 0
+      ),
+      preferredOrientations:
+        item.resolved_preferred_orientations ||
+        item.preferred_orientations ||
+        [],
+      allowedOrientations:
+        item.resolved_allowed_orientations ||
+        item.allowed_orientations ||
+        [],
+      foldStyle: item.resolved_fold_type || item.fold_type || "auto",
+
+      renderHint:
+        item.resolved_render_hint || item.render_hint || buildRenderHint(item),
     };
 
     normalized.physicsProfile = buildPackingItemPhysicsProfile(normalized);

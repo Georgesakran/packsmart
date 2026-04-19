@@ -1,4 +1,5 @@
 const queryAsync = require("../utils/queryAsync");
+const { resolveItemProfile } = require("./packingItemProfileResolver");
 
 const getDefaultSizeProfile = async (itemId) => {
   const rows = await queryAsync(
@@ -83,7 +84,8 @@ const resolveTripItemPackingProfile = async (tripItem) => {
   let sizeProfile = null;
   if (itemId) {
     sizeProfile =
-      (resolvedSizeCode && (await getSelectedSizeProfile(itemId, resolvedSizeCode))) ||
+      (resolvedSizeCode &&
+        (await getSelectedSizeProfile(itemId, resolvedSizeCode))) ||
       (await getDefaultSizeProfile(itemId));
   }
 
@@ -95,7 +97,8 @@ const resolveTripItemPackingProfile = async (tripItem) => {
 
   let foldProfile = null;
   foldProfile =
-    (resolvedFoldType && (await getSelectedFoldProfile(itemId, category, resolvedFoldType))) ||
+    (resolvedFoldType &&
+      (await getSelectedFoldProfile(itemId, category, resolvedFoldType))) ||
     (await getDefaultFoldProfile(itemId, category));
 
   if (foldProfile) {
@@ -108,12 +111,37 @@ const resolveTripItemPackingProfile = async (tripItem) => {
     resolvedFoldType = resolvedFoldType || foldProfile.fold_type;
   }
 
+  const fallbackResolved = resolveItemProfile({
+    customName: tripItem.custom_name,
+    baseItemName: tripItem.base_item_name,
+    category: tripItem.category,
+    sizeCode: resolvedSizeCode,
+  });
+
+  const finalVolume =
+    effectiveVolume > 1 ? Math.round(effectiveVolume) : fallbackResolved.volumeCm3;
+
+  const finalWeight =
+    effectiveWeight > 1 ? Math.round(effectiveWeight) : fallbackResolved.weightG;
+
   return {
     ...tripItem,
+
+    resolved_profile_key: fallbackResolved.profileKey,
     resolved_size_code: resolvedSizeCode,
-    resolved_fold_type: resolvedFoldType,
-    effective_volume_cm3: Math.round(effectiveVolume),
-    effective_weight_g: Math.round(effectiveWeight),
+    resolved_fold_type: resolvedFoldType || fallbackResolved.foldStyle,
+
+    resolved_dimensions_cm: fallbackResolved.dimensionsCm,
+    resolved_material_type: fallbackResolved.materialType,
+    resolved_rigidity_score: fallbackResolved.rigidityScore,
+    resolved_compressibility_score: fallbackResolved.compressibilityScore,
+    resolved_stackability_score: fallbackResolved.stackabilityScore,
+    resolved_preferred_orientations: fallbackResolved.preferredOrientations,
+    resolved_allowed_orientations: fallbackResolved.allowedOrientations,
+    resolved_render_hint: fallbackResolved.renderHint,
+
+    effective_volume_cm3: finalVolume,
+    effective_weight_g: finalWeight,
   };
 };
 
