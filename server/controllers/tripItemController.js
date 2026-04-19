@@ -194,21 +194,7 @@ const getTripItems = async (req, res) => {
           assignedBagRole: item.assigned_bag_role || null,
           assignedBagType: item.assigned_bag_type || null,
         }));
-
-        console.log(
-          "TRIP ITEMS RAW:",
-          results.map((item) => ({
-            id: item.id,
-            custom_name: item.custom_name,
-            category: item.category,
-            quantity: item.quantity,
-            size_code: item.size_code,
-            base_volume_cm3: item.base_volume_cm3,
-            base_weight_g: item.base_weight_g,
-            pack_behavior: item.pack_behavior,
-            travel_day_mode: item.travel_day_mode,
-          }))
-        );
+        
         return successResponse(res, "Trip items fetched successfully", mappedItems);
         
     });

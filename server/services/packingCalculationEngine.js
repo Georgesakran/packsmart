@@ -112,18 +112,6 @@ function getPreferredBagTypesForItem(item) {
           ? baseWeightRaw
           : 1;
 
-          console.log("CALC ITEM:", {
-            id: item.id,
-            name: getItemDisplayName(item),
-            category: item.category,
-            quantity: item.quantity,
-            effective_volume_cm3: item.effective_volume_cm3,
-            resolved_volume_cm3: item.resolved_volume_cm3,
-            base_volume_cm3: item.base_volume_cm3,
-            effective_weight_g: item.effective_weight_g,
-            resolved_weight_g: item.resolved_weight_g,
-            base_weight_g: item.base_weight_g,
-          });
   
       return {
         ...item,
