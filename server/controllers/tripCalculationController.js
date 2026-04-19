@@ -77,6 +77,21 @@ const calculateTrip = async (req, res) => {
     const resolvedTripItems = [];
     for (const item of tripItems) {
       const resolved = await resolveTripItemPackingProfile(item);
+    
+      console.log("RESOLVED TRIP ITEM:", {
+        id: resolved.id,
+        name: resolved.custom_name || resolved.base_item_name,
+        category: resolved.category,
+        size_code: resolved.size_code,
+        resolved_size_code: resolved.resolved_size_code,
+        resolved_profile_key: resolved.resolved_profile_key,
+        resolved_dimensions_cm: resolved.resolved_dimensions_cm,
+        resolved_volume_cm3: resolved.resolved_volume_cm3,
+        resolved_weight_g: resolved.resolved_weight_g,
+        effective_volume_cm3: resolved.effective_volume_cm3,
+        effective_weight_g: resolved.effective_weight_g,
+      });
+    
       resolvedTripItems.push(resolved);
     }
 

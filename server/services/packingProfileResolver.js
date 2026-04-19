@@ -124,25 +124,28 @@ const resolveTripItemPackingProfile = async (tripItem) => {
   const finalWeight =
     effectiveWeight > 1 ? Math.round(effectiveWeight) : fallbackResolved.weightG;
 
-  return {
-    ...tripItem,
-
-    resolved_profile_key: fallbackResolved.profileKey,
-    resolved_size_code: resolvedSizeCode,
-    resolved_fold_type: resolvedFoldType || fallbackResolved.foldStyle,
-
-    resolved_dimensions_cm: fallbackResolved.dimensionsCm,
-    resolved_material_type: fallbackResolved.materialType,
-    resolved_rigidity_score: fallbackResolved.rigidityScore,
-    resolved_compressibility_score: fallbackResolved.compressibilityScore,
-    resolved_stackability_score: fallbackResolved.stackabilityScore,
-    resolved_preferred_orientations: fallbackResolved.preferredOrientations,
-    resolved_allowed_orientations: fallbackResolved.allowedOrientations,
-    resolved_render_hint: fallbackResolved.renderHint,
-
-    effective_volume_cm3: finalVolume,
-    effective_weight_g: finalWeight,
-  };
+    return {
+      ...tripItem,
+  
+      resolved_profile_key: fallbackResolved.profileKey,
+      resolved_size_code: resolvedSizeCode,
+      resolved_fold_type: resolvedFoldType || fallbackResolved.foldStyle,
+  
+      resolved_dimensions_cm: fallbackResolved.dimensionsCm,
+      resolved_material_type: fallbackResolved.materialType,
+      resolved_rigidity_score: fallbackResolved.rigidityScore,
+      resolved_compressibility_score: fallbackResolved.compressibilityScore,
+      resolved_stackability_score: fallbackResolved.stackabilityScore,
+      resolved_preferred_orientations: fallbackResolved.preferredOrientations,
+      resolved_allowed_orientations: fallbackResolved.allowedOrientations,
+      resolved_render_hint: fallbackResolved.renderHint,
+  
+      resolved_volume_cm3: fallbackResolved.volumeCm3,
+      resolved_weight_g: fallbackResolved.weightG,
+  
+      effective_volume_cm3: finalVolume,
+      effective_weight_g: finalWeight,
+    };
 };
 
 module.exports = {

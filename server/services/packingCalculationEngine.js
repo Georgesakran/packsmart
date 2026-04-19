@@ -69,18 +69,75 @@ function getPreferredBagTypesForItem(item) {
   }
   
   function normalizeItems(tripItems = []) {
-    return tripItems.map((item) => ({
-      ...item,
-      displayName: getItemDisplayName(item),
-      quantity: Number(item.quantity || 1),
-      baseVolumeCm3: Number(item.effective_volume_cm3 || item.base_volume_cm3 || 0),
-      baseWeightG: Number(item.effective_weight_g || item.base_weight_g || 0),
-      resolvedSizeCode: item.resolved_size_code || item.size_code || null,
-      resolvedFoldType: item.resolved_fold_type || item.fold_type || null,
-      travel_day_mode: item.travel_day_mode || "normal",
-      packing_status: item.packing_status || "pending",
-      priorityScore: getItemPriorityScore(item),
-    }));
+    return tripItems.map((item) => {
+      const resolvedDimensions = item.resolved_dimensions_cm || null;
+  
+      const derivedVolumeFromDimensions =
+        resolvedDimensions &&
+        resolvedDimensions.w != null &&
+        resolvedDimensions.h != null &&
+        resolvedDimensions.d != null
+          ? Math.round(
+              Number(resolvedDimensions.w || 0) *
+                Number(resolvedDimensions.h || 0) *
+                Number(resolvedDimensions.d || 0)
+            )
+          : 0;
+  
+      const effectiveVolumeRaw = Number(item.effective_volume_cm3 || 0);
+      const resolvedVolumeRaw = Number(item.resolved_volume_cm3 || 0);
+      const baseVolumeRaw = Number(item.base_volume_cm3 || 0);
+  
+      const effectiveWeightRaw = Number(item.effective_weight_g || 0);
+      const resolvedWeightRaw = Number(item.resolved_weight_g || 0);
+      const baseWeightRaw = Number(item.base_weight_g || 0);
+  
+      const finalVolume =
+        effectiveVolumeRaw > 1
+          ? effectiveVolumeRaw
+          : resolvedVolumeRaw > 1
+          ? resolvedVolumeRaw
+          : derivedVolumeFromDimensions > 1
+          ? derivedVolumeFromDimensions
+          : baseVolumeRaw > 1
+          ? baseVolumeRaw
+          : 1;
+  
+      const finalWeight =
+        effectiveWeightRaw > 1
+          ? effectiveWeightRaw
+          : resolvedWeightRaw > 1
+          ? resolvedWeightRaw
+          : baseWeightRaw > 1
+          ? baseWeightRaw
+          : 1;
+
+          console.log("CALC ITEM:", {
+            id: item.id,
+            name: getItemDisplayName(item),
+            category: item.category,
+            quantity: item.quantity,
+            effective_volume_cm3: item.effective_volume_cm3,
+            resolved_volume_cm3: item.resolved_volume_cm3,
+            base_volume_cm3: item.base_volume_cm3,
+            effective_weight_g: item.effective_weight_g,
+            resolved_weight_g: item.resolved_weight_g,
+            base_weight_g: item.base_weight_g,
+          });
+  
+      return {
+        ...item,
+        displayName: getItemDisplayName(item),
+        quantity: Number(item.quantity || 1),
+        baseVolumeCm3: finalVolume,
+        baseWeightG: finalWeight,
+        resolvedSizeCode: item.resolved_size_code || item.size_code || null,
+        resolvedFoldType: item.resolved_fold_type || item.fold_type || null,
+        travel_day_mode: item.travel_day_mode || "normal",
+        packing_status: item.packing_status || "pending",
+        priorityScore: getItemPriorityScore(item),
+      };
+    });
   }
   
   function assignItemToBag(item, bags) {
