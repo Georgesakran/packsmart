@@ -69,10 +69,10 @@ const createTripItem = async (req, res) => {
     }
     
     const normalizedBaseVolumeCm3 =
-    baseVolumeCm3 == null ? null : Number(baseVolumeCm3);
+    baseVolumeCm3 == null ? 0 : Number(baseVolumeCm3);
   
   const normalizedBaseWeightG =
-    baseWeightG == null ? null : Number(baseWeightG);
+    baseWeightG == null ? 0 : Number(baseWeightG);
     
     if (
       Number.isNaN(normalizedBaseVolumeCm3) ||
@@ -194,7 +194,7 @@ const getTripItems = async (req, res) => {
           assignedBagRole: item.assigned_bag_role || null,
           assignedBagType: item.assigned_bag_type || null,
         }));
-        
+
         return successResponse(res, "Trip items fetched successfully", mappedItems);
         
     });
