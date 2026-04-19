@@ -71,7 +71,7 @@ const createTripItem = async (req, res) => {
     const normalizedBaseVolumeCm3 =
     baseVolumeCm3 == null ? 0 : Number(baseVolumeCm3);
   
-  const normalizedBaseWeightG =
+    const normalizedBaseWeightG =
     baseWeightG == null ? 0 : Number(baseWeightG);
     
     if (
@@ -84,24 +84,23 @@ const createTripItem = async (req, res) => {
         message: "Invalid volume or weight values",
       });
     }    
-
     const query = `
-      INSERT INTO trip_items (
-        trip_id,
-        item_id,
-        custom_name,
-        source_type,
-        quantity,
-        size_code,
-        category,
-        audience,
-        normalizedBaseVolumeCm3,
-        normalizedBaseWeightG,
-        pack_behavior,
-        assigned_bag_id
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    INSERT INTO trip_items (
+      trip_id,
+      item_id,
+      custom_name,
+      source_type,
+      quantity,
+      size_code,
+      category,
+      audience,
+      base_volume_cm3,
+      base_weight_g,
+      pack_behavior,
+      assigned_bag_id
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
     db.query(
       query,
