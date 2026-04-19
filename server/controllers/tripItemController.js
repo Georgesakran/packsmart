@@ -42,21 +42,6 @@ const createTripItem = async (req, res) => {
       assignedBagId,
     } = req.body;
 
-
-          console.log("CREATE TRIP ITEM BODY:", {
-              itemId,
-              customName,
-              sourceType,
-              quantity,
-              sizeCode,
-              category,
-              audience,
-              baseVolumeCm3,
-              baseWeightG,
-              packBehavior,
-              assignedBagId,
-            });
-
     const trip = await getOwnedTrip(tripId, userId);
 
     if (!trip) {
@@ -84,10 +69,10 @@ const createTripItem = async (req, res) => {
     }
     
     const normalizedBaseVolumeCm3 =
-      baseVolumeCm3 == null ? 1 : Number(baseVolumeCm3);
-    
-    const normalizedBaseWeightG =
-      baseWeightG == null ? 1 : Number(baseWeightG);
+    baseVolumeCm3 == null ? null : Number(baseVolumeCm3);
+  
+  const normalizedBaseWeightG =
+    baseWeightG == null ? null : Number(baseWeightG);
     
     if (
       Number.isNaN(normalizedBaseVolumeCm3) ||
@@ -110,8 +95,8 @@ const createTripItem = async (req, res) => {
         size_code,
         category,
         audience,
-        base_volume_cm3,
-        base_weight_g,
+        normalizedBaseVolumeCm3,
+        normalizedBaseWeightG,
         pack_behavior,
         assigned_bag_id
       )
