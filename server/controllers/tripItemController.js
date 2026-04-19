@@ -223,6 +223,8 @@ const updateTripItem = async (req, res) => {
       assignedBagId,
     } = req.body;
 
+    
+
     const trip = await getOwnedTrip(tripId, userId);
 
     if (!trip) {
