@@ -700,6 +700,13 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
     stepNumber += 1;
   }
 
+  console.log("BAG SCENE RESULT:", {
+    bagName: bag.name,
+    requestedInBagPass: sceneItems.length,
+    placedInBag: placedItems.length,
+    overflowInBag: overflow.length,
+  });
+
   return {
     bagScene: {
       bag: {
@@ -775,6 +782,14 @@ function buildPackingScene({ tripId, bag, bags, tripItems }) {
     placedItemCount: allPlacedItems.length,
     bagCount: bagScenes.length,
   };
+
+  console.log("PACKING SCENE COUNTS:", {
+    requestedItems: normalizedItems.length,
+    placedItems: allPlacedItems.length,
+    stepCount: allSteps.length,
+    overflowItems: remainingItems.length,
+    overflowNames: remainingItems.map((item) => item.name),
+  });
 
   return {
     sceneVersion: 5,
