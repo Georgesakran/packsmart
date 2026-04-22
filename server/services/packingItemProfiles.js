@@ -1,3 +1,4 @@
+//packingItemProfiles
 const CLOTHING_SIZE_SCALE = {
     XS: 0.82,
     S: 0.9,

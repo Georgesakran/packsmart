@@ -1,3 +1,5 @@
+// PackingCalculationEngine.js
+
 function getPreferredBagTypesForItem(item) {
     const category = (item.category || "").toLowerCase();
     const travelDayMode = (item.travel_day_mode || "normal").toLowerCase();

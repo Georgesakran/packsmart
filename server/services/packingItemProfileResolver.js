@@ -1,3 +1,5 @@
+//packingItemProfileResolver
+
 const {
     PACKING_ITEM_PROFILES,
     CLOTHING_SIZE_SCALE,

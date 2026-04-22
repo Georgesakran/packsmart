@@ -1,3 +1,4 @@
+//tripCalculationController.js
 const queryAsync = require("../utils/queryAsync");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 const { calculatePackingResult } = require("../services/packingCalculationEngine");
@@ -76,9 +77,26 @@ const calculateTrip = async (req, res) => {
 
     const resolvedTripItems = [];
     for (const item of tripItems) {
-      const resolved = await resolveTripItemPackingProfile(item); 
+      const resolved = await resolveTripItemPackingProfile(item);
+    
+      console.log("RESOLVED TRIP ITEM:", {
+        id: resolved.id,
+        name: resolved.custom_name || resolved.base_item_name || "Item",
+        category: resolved.category,
+        quantity: resolved.quantity,
+        size_code: resolved.size_code,
+        resolved_dimensions_cm: resolved.resolved_dimensions_cm,
+        effective_volume_cm3: resolved.effective_volume_cm3,
+        effective_weight_g: resolved.effective_weight_g,
+        resolved_material_type: resolved.resolved_material_type,
+        resolved_compressibility_score: resolved.resolved_compressibility_score,
+        resolved_stackability_score: resolved.resolved_stackability_score,
+        resolved_fold_type: resolved.resolved_fold_type,
+      });
+    
       resolvedTripItems.push(resolved);
     }
+
 
     const result = calculatePackingResult({
       trip,
