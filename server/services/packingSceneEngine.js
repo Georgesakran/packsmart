@@ -168,18 +168,43 @@ function estimateItemDimensionsCm(item) {
   };
 }
 
-function normalizeSceneItems(tripItems = []) {
-  return tripItems.map((item) => {
-    const weightG = Number(item.effective_weight_g || item.base_weight_g || 0);
+function expandSceneItemsByQuantity(baseItem) {
+  const quantity = Math.max(1, Number(baseItem.quantity || 1));
+  const expanded = [];
 
-    const normalized = {
+  for (let index = 0; index < quantity; index += 1) {
+    expanded.push({
+      ...baseItem,
+      quantity: 1,
+      unitIndex: index + 1,
+      sceneItemId: `${baseItem.tripItemId}-${index + 1}`,
+      name:
+        quantity > 1
+          ? `${baseItem.name} ${index + 1}`
+          : baseItem.name,
+    });
+  }
+
+  return expanded;
+}
+
+function normalizeSceneItems(tripItems = []) {
+  return tripItems.flatMap((item) => {
+    const quantity = Math.max(1, Number(item.quantity || 1));
+    const totalWeightG = Number(item.effective_weight_g || item.base_weight_g || 0);
+    const unitWeightG =
+      quantity > 0 ? Math.max(1, totalWeightG / quantity) : Math.max(1, totalWeightG);
+
+    const dimensionsCm = estimateItemDimensionsCm(item);
+
+    const baseNormalized = {
       tripItemId: item.id,
       itemId: item.item_id || null,
       name: item.custom_name || item.base_item_name || "Item",
       category: item.category || "misc",
-      quantity: Number(item.quantity || 1),
-      massG: weightG,
-      dimensionsCm: estimateItemDimensionsCm(item),
+      quantity,
+      massG: unitWeightG,
+      dimensionsCm,
 
       packing_status: item.packing_status || "pending",
       travel_day_mode: item.travel_day_mode || "normal",
@@ -212,8 +237,16 @@ function normalizeSceneItems(tripItems = []) {
         item.resolved_render_hint || item.render_hint || buildRenderHint(item),
     };
 
-    normalized.physicsProfile = buildPackingItemPhysicsProfile(normalized);
-    return normalized;
+    const expandedItems = expandSceneItemsByQuantity(baseNormalized);
+
+    return expandedItems.map((expandedItem) => {
+      const normalizedUnit = {
+        ...expandedItem,
+      };
+
+      normalizedUnit.physicsProfile = buildPackingItemPhysicsProfile(normalizedUnit);
+      return normalizedUnit;
+    });
   });
 }
 
@@ -613,6 +646,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
 
         const scoredPlacement = {
           tripItemId: item.tripItemId,
+          sceneItemId: item.sceneItemId || String(item.tripItemId),
           itemId: item.itemId,
           name: item.name,
           category: item.category,
@@ -658,7 +692,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
       tripItemId: bestPlacement.tripItemId,
       bagId: bag.id,
       instruction: `Place ${bestPlacement.name} in ${bestPlacement.zoneKey.replace(/_/g, " ")} of ${bag.name}.`,
-      highlightItemIds: [bestPlacement.tripItemId],
+      highlightItemIds: [bestPlacement.sceneItemId],
       cameraHint: buildCameraHint(bestPlacement, inner),
       placementScore: bestPlacement.placementScore,
     });
