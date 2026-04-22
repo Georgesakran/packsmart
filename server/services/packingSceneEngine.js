@@ -733,6 +733,8 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
   };
 }
 
+console.log("hi");
+
 function buildPackingScene({ tripId, bag, bags, tripItems }) {
   const allBags =
     Array.isArray(bags) && bags.length > 0
