@@ -19,17 +19,13 @@ app.get("/", (req, res) => {
   res.send("PackSmart API is running");
 });
 
-const suitcaseRoutes = require("./routes/suitcaseRoutes");
 const calculateRoutes = require("./routes/calculateRoutes");
 const authRoutes = require("./routes/authRoutes");
 const tripRoutes = require("./routes/tripRoutes");
 const tripSuitcaseRoutes = require("./routes/tripSuitcaseRoutes");
 const tripItemRoutes = require("./routes/tripItemRoutes");
 const tripCalculationRoutes = require("./routes/tripCalculationRoutes");
-const tripSuggestionRoutes = require("./routes/tripSuggestionRoutes");
 const airlineRoutes = require("./routes/airlineRoutes");
-const notificationPreferenceRoutes = require("./routes/notificationPreferenceRoutes");
-const tripReminderRoutes = require("./routes/tripReminderRoutes");
 const tripSimulationRoutes = require("./routes/tripSimulationRoutes");
 
 
