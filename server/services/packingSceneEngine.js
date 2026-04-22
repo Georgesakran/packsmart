@@ -765,13 +765,16 @@ function buildPackingScene({ tripId, bag, bags, tripItems }) {
     allPlacedItems.push(...sceneResult.placedItems);
     allSteps.push(...sceneResult.steps);
 
-    const placedIds = new Set(
-      sceneResult.placedItems.map((item) => item.tripItemId)
+    const placedSceneItemIds = new Set(
+      sceneResult.placedItems.map(
+        (item) => item.sceneItemId || String(item.tripItemId)
+      )
     );
-
-    remainingItems = remainingItems.filter(
-      (item) => !placedIds.has(item.tripItemId)
-    );
+    
+    remainingItems = remainingItems.filter((item) => {
+      const itemKey = item.sceneItemId || String(item.tripItemId);
+      return !placedSceneItemIds.has(itemKey);
+    });
 
     stepNumber = sceneResult.nextStepNumber;
   }
@@ -807,14 +810,16 @@ function buildPackingScene({ tripId, bag, bags, tripItems }) {
           } could not be placed in the available bags.`,
         ]
       : [],
-    overflow: remainingItems.map((item) => ({
-      tripItemId: item.tripItemId,
-      itemId: item.itemId,
-      name: item.name,
-      category: item.category,
-      quantity: item.quantity,
-      reason: "No high-quality placement found inside the available bags.",
-    })),
+      overflow: remainingItems.map((item) => ({
+        tripItemId: item.tripItemId,
+        sceneItemId: item.sceneItemId || String(item.tripItemId),
+        itemId: item.itemId,
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        unitIndex: item.unitIndex || null,
+        reason: "No high-quality placement found inside the available bags.",
+      })),
   };
 }
 
