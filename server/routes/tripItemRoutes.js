@@ -6,26 +6,10 @@ const {
   getTripItems,
   updateTripItem,
   deleteTripItem,
-  clearTripItems,
-  assignTripItemToBag,
-  getTripChecklistSummary,
-  updateTripItemPackingStatus,
-  updateTripItemTravelDayMode,
-  getTripTravelDaySummary,
-  getTripItemsSummary,
-  updateTripItemQuantity,
 } = require("../controllers/tripItemController");
 
 router.post("/:tripId/items", protect, createTripItem);
 router.get("/:tripId/items", protect, getTripItems);
 router.put("/:tripId/items/:tripItemId", protect, updateTripItem);
 router.delete("/:tripId/items/:tripItemId", protect, deleteTripItem);
-router.delete("/:tripId/items", protect, clearTripItems);
-router.put("/:tripId/items/:itemId/assign-bag", protect, assignTripItemToBag);
-router.put("/:tripId/items/:itemId/packing-status",protect,updateTripItemPackingStatus);
-router.get("/:tripId/checklist-summary",protect,getTripChecklistSummary);
-router.put("/:tripId/items/:itemId/travel-day-mode",protect,updateTripItemTravelDayMode);
-router.get("/:tripId/travel-day-summary",protect,getTripTravelDaySummary);
-router.get("/:tripId/items-summary", protect, getTripItemsSummary);
-router.put("/:tripId/items/:tripItemId/quantity", protect, updateTripItemQuantity);
 module.exports = router;
