@@ -436,16 +436,16 @@ function resolveCompressionForPlacement(item, orientation, zoneKey, supportType 
   let wRatio = 1;
 
   if (compressibilityScore >= 80) {
-    hRatio = supportType === "stack" ? 0.68 : 0.8;
-    dRatio = zoneKey.includes("side_channel") ? 0.8 : 0.9;
-    wRatio = 0.94;
+    hRatio = supportType === "stack" ? 0.55 : 0.72;
+    dRatio = zoneKey.includes("side_channel") ? 0.74 : 0.84;
+    wRatio = 0.9;
   } else if (compressibilityScore >= 55) {
-    hRatio = supportType === "stack" ? 0.78 : 0.88;
-    dRatio = zoneKey.includes("side_channel") ? 0.88 : 0.95;
-    wRatio = 0.97;
+    hRatio = supportType === "stack" ? 0.68 : 0.82;
+    dRatio = zoneKey.includes("side_channel") ? 0.82 : 0.9;
+    wRatio = 0.95;
   } else if (compressibilityScore >= 20) {
-    hRatio = supportType === "stack" ? 0.9 : 0.96;
-    dRatio = 0.97;
+    hRatio = supportType === "stack" ? 0.84 : 0.93;
+    dRatio = 0.95;
   }
 
   hRatio = Math.max(minRatio, hRatio);

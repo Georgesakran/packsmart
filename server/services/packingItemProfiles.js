@@ -1,25 +1,25 @@
 //packingItemProfiles
 const CLOTHING_SIZE_SCALE = {
-    XS: 0.82,
-    S: 0.9,
-    M: 1,
-    L: 1.12,
-    XL: 1.24,
-    XXL: 1.36,
-  };
+  XS: 0.82,
+  S: 0.9,
+  M: 1,
+  L: 1.08,
+  XL: 1.16,
+  XXL: 1.24,
+};
   
-  const SHOE_SIZE_SCALE = {
-    38: 0.86,
-    39: 0.9,
-    40: 0.94,
-    41: 0.97,
-    42: 1,
-    43: 1.04,
-    44: 1.08,
-    45: 1.12,
-    46: 1.16,
-    47: 1.2,
-  };
+const SHOE_SIZE_SCALE = {
+  38: 0.88,
+  39: 0.92,
+  40: 0.95,
+  41: 0.98,
+  42: 1,
+  43: 1.02,
+  44: 1.05,
+  45: 1.08,
+  46: 1.11,
+  47: 1.14,
+};
   
   const PACKING_ITEM_PROFILES = {
     tshirt_basic: {
@@ -27,7 +27,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["t-shirt", "t shirt", "shirt", "tee", "tshirt"],
       category: "clothing",
       base: {
-        dimensionsCm: { w: 16, h: 4, d: 11 },
+        dimensionsCm: { w: 14, h: 2.8, d: 10 },
         weightG: 180,
         materialType: "soft",
         rigidityScore: 8,
@@ -46,7 +46,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["pants", "trousers", "jeans"],
       category: "bottoms",
       base: {
-        dimensionsCm: { w: 18, h: 4, d: 12 },
+        dimensionsCm: { w: 16, h: 3.5, d: 11 },
         weightG: 420,
         materialType: "soft",
         rigidityScore: 16,
@@ -65,7 +65,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["hoodie", "sweatshirt", "pullover"],
       category: "outerwear",
       base: {
-        dimensionsCm: { w: 22, h: 8, d: 15 },
+        dimensionsCm: { w: 18, h: 5.5, d: 13 },
         weightG: 650,
         materialType: "soft",
         rigidityScore: 18,
@@ -84,7 +84,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["underwear", "boxers", "briefs"],
       category: "underwear",
       base: {
-        dimensionsCm: { w: 7, h: 4, d: 6 },
+        dimensionsCm: { w: 6, h: 2.2, d: 5 },
         weightG: 60,
         materialType: "soft",
         rigidityScore: 4,
@@ -103,7 +103,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["socks", "sock"],
       category: "underwear",
       base: {
-        dimensionsCm: { w: 6, h: 3, d: 5 },
+        dimensionsCm: { w: 5, h: 2, d: 4 },
         weightG: 40,
         materialType: "soft",
         rigidityScore: 3,
@@ -122,7 +122,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["shoes", "sneakers", "trainers"],
       category: "shoes",
       base: {
-        dimensionsCm: { w: 18, h: 11, d: 13 },
+        dimensionsCm: { w: 18, h: 10, d: 12.5 },
         weightG: 950,
         materialType: "rigid",
         rigidityScore: 86,
@@ -141,7 +141,7 @@ const CLOTHING_SIZE_SCALE = {
       aliases: ["toiletries", "toiletry pouch", "toothbrush", "toothpaste"],
       category: "toiletries",
       base: {
-        dimensionsCm: { w: 16, h: 6, d: 10 },
+        dimensionsCm: { w: 15, h: 5.5, d: 9 },
         weightG: 350,
         materialType: "semi_soft",
         rigidityScore: 36,
