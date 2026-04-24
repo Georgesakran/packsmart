@@ -75,7 +75,7 @@ function getPreferredZones(item) {
   }
 
   if (category === "shoes") {
-    return ["bottom_base", "middle_core"];
+    return ["bottom_base", "middle_core", "top_layer", "side_channel_left", "side_channel_right"];
   }
 
   if (category === "underwear") {
@@ -119,7 +119,7 @@ function itemPriority(item) {
   if (category === "tech") score -= 3000;
   if (category === "accessories") score -= 1800;
   if (category === "underwear") score -= 1200;
-  if (category === "shoes") score += 5000;
+  if (category === "shoes") score += 9000;
   if (category === "outerwear") score += 2600;
   if (category === "bottoms") score += 1800;
   if (category === "toiletries") score += 900;
