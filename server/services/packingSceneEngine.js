@@ -9,6 +9,9 @@ const { resolveOrientations } = require("./packingOrientationResolver");
 const { buildPackingItemPhysicsProfile } = require("./packingItemPhysicsProfile");
 const { scorePlacementCandidate } = require("./packingPlacementScoring");
 
+
+
+
 function nearlyEqual(a, b, tolerance = 0.01) {
   return Math.abs(Number(a || 0) - Number(b || 0)) <= tolerance;
 }
