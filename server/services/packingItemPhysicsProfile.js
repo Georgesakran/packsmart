@@ -1,4 +1,5 @@
-function normalizeCategory(category = "") {
+//packingItemPhysicsProfile.js
+  function normalizeCategory(category = "") {
     return String(category || "misc").toLowerCase();
   }
   
@@ -102,45 +103,46 @@ function normalizeCategory(category = "") {
         };
         break;
   
-      case "shoes":
-        profile = {
-          ...profile,
-          materialType: "rigid",
-          rigidityScore: 82,
-          compressibilityScore: 5,
-          compressionRatioMin: 0.98,
-          stackabilityScore: 78,
-          supportNeedScore: 60,
-          fragilityScore: 10,
-          topLoadToleranceScore: 88,
-          preferredOrientations: ["flat", "side"],
-          allowedOrientations: ["flat", "side"],
-          preferCenterZones: true,
-          canBeStackBase: true,
-          canStackOnTopOfOthers: false,
-          shouldBePackedEarly: true,
-        };
-        break;
+        case "shoes":
+          profile = {
+            ...profile,
+            materialType: "rigid",
+            rigidityScore: 90,
+            compressibilityScore: 2,
+            compressionRatioMin: 0.99,
+            stackabilityScore: 88,
+            supportNeedScore: 82,
+            fragilityScore: 8,
+            topLoadToleranceScore: 92,
+            preferredOrientations: ["flat", "side"],
+            allowedOrientations: ["flat", "side"],
+            preferCenterZones: true,
+            canBeStackBase: true,
+            canStackOnTopOfOthers: false,
+            shouldNotBeCompressed: true,
+            shouldBePackedEarly: true,
+          };
+          break;
   
-      case "underwear":
-        profile = {
-          ...profile,
-          materialType: "soft",
-          rigidityScore: 8,
-          compressibilityScore: 96,
-          compressionRatioMin: 0.62,
-          stackabilityScore: 86,
-          supportNeedScore: 10,
-          fragilityScore: 4,
-          topLoadToleranceScore: 95,
-          preferredOrientations: ["rolled", "flat"],
-          allowedOrientations: ["rolled", "flat", "side"],
-          preferEdgeZones: true,
-          canBeStackBase: false,
-          canStackOnTopOfOthers: true,
-          shouldBePackedLate: true,
-        };
-        break;
+          case "underwear":
+            profile = {
+              ...profile,
+              materialType: "soft",
+              rigidityScore: 8,
+              compressibilityScore: 90,
+              compressionRatioMin: 0.72,
+              stackabilityScore: 42,
+              supportNeedScore: 14,
+              fragilityScore: 4,
+              topLoadToleranceScore: 95,
+              preferredOrientations: ["rolled", "flat"],
+              allowedOrientations: ["rolled", "flat", "side"],
+              preferEdgeZones: true,
+              canBeStackBase: false,
+              canStackOnTopOfOthers: true,
+              shouldBePackedLate: true,
+            };
+            break;
   
       case "accessories":
         profile = {
@@ -163,26 +165,26 @@ function normalizeCategory(category = "") {
         };
         break;
   
-      case "bottoms":
-        profile = {
-          ...profile,
-          materialType: "semi_soft",
-          rigidityScore: 28,
-          compressibilityScore: 66,
-          compressionRatioMin: 0.74,
-          stackabilityScore: 76,
-          supportNeedScore: 28,
-          fragilityScore: 8,
-          topLoadToleranceScore: 86,
-          preferredOrientations: ["flat"],
-          allowedOrientations: ["flat", "side"],
-          keepFlat: false,
-          preferCenterZones: true,
-          canBeStackBase: true,
-          canStackOnTopOfOthers: true,
-          shouldBePackedEarly: true,
-        };
-        break;
+        case "bottoms":
+          profile = {
+            ...profile,
+            materialType: "semi_soft",
+            rigidityScore: 34,
+            compressibilityScore: 58,
+            compressionRatioMin: 0.8,
+            stackabilityScore: 82,
+            supportNeedScore: 34,
+            fragilityScore: 8,
+            topLoadToleranceScore: 88,
+            preferredOrientations: ["flat"],
+            allowedOrientations: ["flat", "side"],
+            keepFlat: false,
+            preferCenterZones: true,
+            canBeStackBase: true,
+            canStackOnTopOfOthers: true,
+            shouldBePackedEarly: true,
+          };
+          break;
   
       case "outerwear":
         profile = {
@@ -204,24 +206,24 @@ function normalizeCategory(category = "") {
         };
         break;
   
-      case "clothing":
-        profile = {
-          ...profile,
-          materialType: "soft",
-          rigidityScore: 20,
-          compressibilityScore: 70,
-          compressionRatioMin: 0.72,
-          stackabilityScore: 74,
-          supportNeedScore: 26,
-          fragilityScore: 6,
-          topLoadToleranceScore: 82,
-          preferredOrientations: ["flat"],
-          allowedOrientations: ["flat", "side", "rolled"],
-          preferCenterZones: true,
-          canBeStackBase: false,
-          canStackOnTopOfOthers: true,
-        };
-        break;
+        case "clothing":
+          profile = {
+            ...profile,
+            materialType: "soft",
+            rigidityScore: 18,
+            compressibilityScore: 62,
+            compressionRatioMin: 0.8,
+            stackabilityScore: 58,
+            supportNeedScore: 34,
+            fragilityScore: 6,
+            topLoadToleranceScore: 72,
+            preferredOrientations: ["flat"],
+            allowedOrientations: ["flat", "side", "rolled"],
+            preferCenterZones: true,
+            canBeStackBase: false,
+            canStackOnTopOfOthers: true,
+          };
+          break;
   
       default:
         profile = {

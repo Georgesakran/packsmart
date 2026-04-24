@@ -21,18 +21,27 @@ function getZoneAccessScore(zoneKey) {
 function getZoneStabilityScore(zoneKey) {
   const key = normalizeZoneKey(zoneKey);
 
-  if (key === "bottom_base") return 96;
-  if (key === "middle_core") return 74;
-  if (key === "top_layer") return 46;
-  if (key === "side_channel_left" || key === "side_channel_right") return 54;
-  if (key === "quick_access") return 38;
+  if (key === "bottom_base") return 98;
+  if (key === "middle_core") return 78;
+  if (key === "top_layer") return 42;
+  if (key === "side_channel_left" || key === "side_channel_right") return 48;
+  if (key === "quick_access") return 34;
 
   return 50;
 }
 
 function getSupportQualityScore(supportType = "floor", supportCoverageRatio = 0) {
-  if (supportType === "floor") return 95;
-  return clampScore(40 + supportCoverageRatio * 60);
+  if (supportType === "floor") return 100;
+
+  const ratio = Number(supportCoverageRatio || 0);
+
+  if (ratio >= 0.95) return 92;
+  if (ratio >= 0.85) return 82;
+  if (ratio >= 0.75) return 68;
+  if (ratio >= 0.65) return 52;
+  if (ratio >= 0.55) return 36;
+
+  return 18;
 }
 
 function getCompressionPenalty(profile, compressionAppliedRatio = 1) {
@@ -42,7 +51,7 @@ function getCompressionPenalty(profile, compressionAppliedRatio = 1) {
   if (compressionAppliedRatio >= minAllowed) return 0;
 
   const overCompression = minAllowed - compressionAppliedRatio;
-  return clampScore(overCompression * 240);
+  return clampScore(overCompression * 320);
 }
 
 function getFragilityPenalty(profile, supportType, zoneKey) {
@@ -52,11 +61,11 @@ function getFragilityPenalty(profile, supportType, zoneKey) {
   const fragility = Number(profile.fragilityScore || 0);
 
   if (supportType === "stack") {
-    penalty += fragility * 0.35;
+    penalty += fragility * 0.45;
   }
 
   if (normalizeZoneKey(zoneKey) === "bottom_base" && fragility >= 60) {
-    penalty += 16;
+    penalty += 18;
   }
 
   if (normalizeZoneKey(zoneKey) === "top_layer" && fragility <= 15) {
@@ -79,12 +88,13 @@ function getZonePreferenceBonus(profile, zoneKey) {
   }
 
   if (profile.preferEdgeZones) {
-    if (key === "side_channel_left" || key === "side_channel_right") bonus += 16;
+    if (key === "side_channel_left" || key === "side_channel_right") bonus += 14;
   }
 
   if (profile.preferCenterZones) {
-    if (key === "middle_core") bonus += 16;
-    if (key === "bottom_base") bonus += 8;
+    if (key === "middle_core") bonus += 18;
+    if (key === "bottom_base") bonus += 14;
+    if (key === "top_layer") bonus -= 8;
   }
 
   if (profile.avoidBottomZone && key === "bottom_base") {
@@ -109,8 +119,8 @@ function getOrientationScore(profile, orientationLabel = "flat") {
     : [];
 
   if (preferred.includes(orientationLabel)) return 100;
-  if (allowed.includes(orientationLabel)) return 72;
-  return 20;
+  if (allowed.includes(orientationLabel)) return 70;
+  return 18;
 }
 
 function getBaseCompatibilityBonus(profile, supportingItems = []) {
@@ -123,32 +133,40 @@ function getBaseCompatibilityBonus(profile, supportingItems = []) {
   for (const item of supportingItems) {
     const materialType = String(item.materialType || "").toLowerCase();
     const rigidityScore = Number(item.rigidityScore || 0);
+    const stackabilityScore = Number(item.stackabilityScore || 0);
 
     if (profile.fragilityScore >= 70) {
-      if (materialType === "soft") bonus += 8;
-      if (rigidityScore >= 75) bonus -= 6;
+      if (materialType === "soft") bonus += 6;
+      if (rigidityScore >= 75) bonus -= 8;
     }
 
     if (profile.canStackOnTopOfOthers && rigidityScore >= 65) {
-      bonus += 5;
+      bonus += 4;
+    }
+
+    if (stackabilityScore < 55) {
+      bonus -= 10;
     }
   }
 
   return bonus;
 }
 
-function getHeavyItemBalanceScore(item, positionCm, bagInner) {
+function getHeavyItemBalanceScore(item, positionCm, bagInner, sizeCm) {
   const massG = Number(item.massG || 0);
   if (massG <= 0 || !bagInner) return 50;
+
+  const itemWidth = Number(sizeCm?.w || 0);
+  const itemDepth = Number(sizeCm?.d || 0);
 
   const centerX = Number(bagInner.width || 0) / 2;
   const centerZ = Number(bagInner.depth || 0) / 2;
 
-  const x = Number(positionCm.x || 0);
-  const z = Number(positionCm.z || 0);
+  const itemCenterX = Number(positionCm.x || 0) + itemWidth / 2;
+  const itemCenterZ = Number(positionCm.z || 0) + itemDepth / 2;
 
-  const dx = Math.abs(centerX - x);
-  const dz = Math.abs(centerZ - z);
+  const dx = Math.abs(centerX - itemCenterX);
+  const dz = Math.abs(centerZ - itemCenterZ);
 
   const normalizedDistance =
     (dx / Math.max(1, centerX)) * 0.55 + (dz / Math.max(1, centerZ)) * 0.45;
@@ -159,6 +177,62 @@ function getHeavyItemBalanceScore(item, positionCm, bagInner) {
   if (massG <= 300) score -= 8;
 
   return clampScore(score);
+}
+
+function getVerticalPlacementPenalty({
+  item,
+  profile,
+  zoneKey,
+  supportType,
+  positionCm,
+  sizeCm,
+  bagInner,
+}) {
+  if (!bagInner) return 0;
+
+  const itemBottomY = Number(positionCm?.y || 0);
+  const bagHeight = Number(bagInner?.height || 1);
+  const relativeHeight = bagHeight > 0 ? itemBottomY / bagHeight : 0;
+
+  const massG = Number(item?.massG || 0);
+  const fragility = Number(profile?.fragilityScore || 0);
+  const rigidity = Number(profile?.rigidityScore || 0);
+
+  let penalty = 0;
+
+  if (supportType === "stack") {
+    penalty += 8;
+  }
+
+  if (relativeHeight > 0.55) {
+    penalty += 10;
+  }
+
+  if (relativeHeight > 0.7) {
+    penalty += 12;
+  }
+
+  if (massG >= 600 && relativeHeight > 0.35) {
+    penalty += 18;
+  }
+
+  if (massG >= 900 && supportType === "stack") {
+    penalty += 24;
+  }
+
+  if (rigidity >= 75 && supportType === "stack") {
+    penalty += 12;
+  }
+
+  if (fragility >= 70 && supportType === "stack") {
+    penalty += 18;
+  }
+
+  if (zoneKey === "top_layer" && massG >= 450) {
+    penalty += 16;
+  }
+
+  return penalty;
 }
 
 function buildPlacementIssues({
@@ -175,11 +249,12 @@ function buildPlacementIssues({
   const zoneKey = normalizeZoneKey(zone?.zoneKey || "");
   const fragility = Number(profile?.fragilityScore || 0);
   const massG = Number(item?.massG || 0);
+  const rigidity = Number(profile?.rigidityScore || 0);
   const preferred = Array.isArray(profile?.preferredOrientations)
     ? profile.preferredOrientations
     : [];
 
-  if (supportType === "stack" && Number(supportCoverageRatio || 0) < 0.66) {
+  if (supportType === "stack" && Number(supportCoverageRatio || 0) < 0.75) {
     issues.push({
       code: "low_support_coverage",
       severity: "high",
@@ -218,6 +293,28 @@ function buildPlacementIssues({
       code: "fragile_in_bottom_zone",
       severity: "medium",
       message: "Fragile item is placed in a bottom support zone.",
+    });
+  }
+
+  if (
+    massG >= 700 &&
+    supportType === "stack"
+  ) {
+    issues.push({
+      code: "heavy_item_on_stack",
+      severity: "high",
+      message: "Heavy item is placed on a stacked surface instead of a grounded base.",
+    });
+  }
+
+  if (
+    rigidity >= 75 &&
+    supportType === "stack"
+  ) {
+    issues.push({
+      code: "rigid_item_on_stack",
+      severity: "medium",
+      message: "Rigid item is stacked above other items instead of being grounded.",
     });
   }
 
@@ -263,7 +360,7 @@ function buildPlacementIssues({
     });
   }
 
-  if (breakdown && Number(breakdown.supportScore || 0) < 58) {
+  if (breakdown && Number(breakdown.supportScore || 0) < 60) {
     issues.push({
       code: "weak_support_score",
       severity: "medium",
@@ -288,7 +385,6 @@ function buildPlacementSuggestions({
   issues = [],
   profile,
   zone,
-  orientation,
 }) {
   const suggestions = [];
   const zoneKey = normalizeZoneKey(zone?.zoneKey || "");
@@ -329,6 +425,15 @@ function buildPlacementSuggestions({
           code: "move_fragile_higher",
           priority: "medium",
           message: "Move this fragile item to a higher, safer zone.",
+        });
+        break;
+
+      case "heavy_item_on_stack":
+      case "rigid_item_on_stack":
+        suggestions.push({
+          code: "ground_heavy_or_rigid_item",
+          priority: "high",
+          message: "Move this item to bottom base or a directly supported middle area.",
         });
         break;
 
@@ -410,7 +515,7 @@ function scorePlacementCandidate({
   const supportScore = getSupportQualityScore(supportType, supportCoverageRatio);
   const preferenceBonus = getZonePreferenceBonus(profile, zoneKey);
   const orientationScore = getOrientationScore(profile, orientation?.label || "flat");
-  const balanceScore = getHeavyItemBalanceScore(item, positionCm, bagInner);
+  const balanceScore = getHeavyItemBalanceScore(item, positionCm, bagInner, sizeCm);
   const compatibilityBonus = getBaseCompatibilityBonus(profile, supportingItems);
 
   const compressionPenalty = getCompressionPenalty(
@@ -418,17 +523,27 @@ function scorePlacementCandidate({
     compressionAppliedRatio
   );
   const fragilityPenalty = getFragilityPenalty(profile, supportType, zoneKey);
+  const verticalPlacementPenalty = getVerticalPlacementPenalty({
+    item,
+    profile,
+    zoneKey: normalizeZoneKey(zoneKey),
+    supportType,
+    positionCm,
+    sizeCm,
+    bagInner,
+  });
 
   const total =
-    accessScore * 0.16 +
-    stabilityScore * 0.23 +
-    supportScore * 0.2 +
-    orientationScore * 0.14 +
-    balanceScore * 0.12 +
+    accessScore * 0.12 +
+    stabilityScore * 0.24 +
+    supportScore * 0.24 +
+    orientationScore * 0.12 +
+    balanceScore * 0.14 +
     preferenceBonus +
     compatibilityBonus -
     compressionPenalty -
-    fragilityPenalty;
+    fragilityPenalty -
+    verticalPlacementPenalty;
 
   const breakdown = {
     accessScore,
@@ -440,6 +555,7 @@ function scorePlacementCandidate({
     compatibilityBonus,
     compressionPenalty,
     fragilityPenalty,
+    verticalPlacementPenalty,
   };
 
   const issues = buildPlacementIssues({
