@@ -320,25 +320,52 @@ function getOverlapLength(startA, endA, startB, endB) {
 }
 
 function getSupportCandidates(zone, placedItems, item, sizeCm) {
-  const supportCandidates = [{ y: zone.boundsCm.y, supportType: "floor", supportItems: [] }];
+  const supportCandidates = [
+    { y: zone.boundsCm.y, supportType: "floor", supportItems: [] }
+  ];
 
   const profile = item.physicsProfile || {};
-  if (!profile.canStackOnTopOfOthers && profile.supportNeedScore >= 60) {
+  const itemMassG = Number(item.massG || 0);
+  const itemRigidity = Number(profile.rigidityScore || 0);
+  const itemSupportNeed = Number(profile.supportNeedScore || 0);
+
+  // Heavy / rigid / high-support items should prefer grounded placement only
+  if (
+    itemMassG >= 550 ||
+    itemRigidity >= 75 ||
+    itemSupportNeed >= 70 ||
+    profile.shouldNotBeCompressed
+  ) {
     return supportCandidates;
   }
 
   const zonePlaced = placedItems.filter((placed) => placed.zoneKey === zone.zoneKey);
 
   for (const placed of zonePlaced) {
-    const topY = Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
-    if (topY + sizeCm.h > zone.boundsCm.y + zone.boundsCm.h) continue;
+    const placedTopY =
+      Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
 
-    if (!placed.canBeStackBase && Number(placed.stackabilityScore || 0) < 55) {
-      continue;
-    }
+    if (placedTopY + sizeCm.h > zone.boundsCm.y + zone.boundsCm.h) continue;
+
+    const placedSupportType = String(placed.supportType || "floor").toLowerCase();
+    const placedStackability = Number(placed.stackabilityScore || 0);
+    const placedRigidity = Number(placed.rigidityScore || 0);
+    const placedMassG = Number(placed.massG || 0);
+
+    const baseArea =
+      Number(placed.sizeCm?.w || 0) * Number(placed.sizeCm?.d || 0);
+    const itemArea = Number(sizeCm.w || 0) * Number(sizeCm.d || 0);
+    const areaRatio = itemArea > 0 ? baseArea / itemArea : 0;
+
+    // Only allow stacked support on grounded, stable, fairly wide bases
+    if (placedSupportType !== "floor") continue;
+    if (!placed.canBeStackBase) continue;
+    if (placedStackability < 72) continue;
+    if (placedRigidity < 26 && placedMassG < 250) continue;
+    if (areaRatio < 0.72) continue;
 
     supportCandidates.push({
-      y: topY,
+      y: placedTopY,
       supportType: "stack",
       supportItems: [placed],
     });
@@ -347,17 +374,31 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
   return supportCandidates.sort((a, b) => a.y - b.y);
 }
 
-function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems) {
+function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems, item = null) {
   if (nearlyEqual(positionCm.y, zone.boundsCm.y)) {
     return { supported: true, supportCoverageRatio: 1, supportingItems: [] };
   }
 
   const baseY = Number(positionCm.y || 0);
-  const neededCoverageRatio = 0.52;
+  const profile = item?.physicsProfile || {};
+  const itemMassG = Number(item?.massG || 0);
+  const itemRigidity = Number(profile.rigidityScore || 0);
+
+  let neededCoverageRatio = 0.78;
+
+  if (itemMassG >= 400) neededCoverageRatio = 0.84;
+  if (itemMassG >= 700 || itemRigidity >= 75) neededCoverageRatio = 0.9;
+  if (profile.shouldNotBeCompressed) neededCoverageRatio = Math.max(neededCoverageRatio, 0.88);
 
   const supporters = placedItems.filter((placed) => {
     const topY = Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
     if (!nearlyEqual(topY, baseY, 0.1)) return false;
+
+    const placedSupportType = String(placed.supportType || "floor").toLowerCase();
+    const placedStackability = Number(placed.stackabilityScore || 0);
+
+    if (placedSupportType !== "floor") return false;
+    if (!placed.canBeStackBase && placedStackability < 75) return false;
 
     const xOverlap = getOverlapLength(
       positionCm.x,
@@ -402,7 +443,7 @@ function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems) {
   const supportCoverageRatio = baseArea > 0 ? totalSupportArea / baseArea : 0;
 
   return {
-    supported: totalSupportArea >= baseArea * neededCoverageRatio,
+    supported: supportCoverageRatio >= neededCoverageRatio,
     supportCoverageRatio,
     supportingItems: supporters,
   };
@@ -453,6 +494,7 @@ function resolveCompressionForPlacement(item, orientation, zoneKey, supportType 
   };
 }
 
+
 function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
   const supportCandidates = getSupportCandidates(
     zone,
@@ -492,7 +534,13 @@ function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
     for (const candidate of dedupeCandidates(slotCandidates)) {
       if (!fitsInside(bounds, candidate, sizeCm)) continue;
 
-      const supportCheck = hasSupportForPlacement(candidate, sizeCm, zone, placedItems);
+      const supportCheck = hasSupportForPlacement(
+        candidate,
+        sizeCm,
+        zone,
+        placedItems,
+        item
+      );
       if (!supportCheck.supported) continue;
 
       const candidateBox = makeBox(candidate, sizeCm);
