@@ -143,6 +143,7 @@
               shouldBePackedLate: true,
             };
             break;
+            
   
       case "accessories":
         profile = {
