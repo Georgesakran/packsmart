@@ -117,6 +117,8 @@ const calculateTrip = async (req, res) => {
         bag: primaryBag,
         bags: selectedBags,
         tripItems: resolvedTripItems,
+        bagResults: result.bagResults || [],
+        overflowItems: result.overflowItems || [],
       });
     }
 
@@ -146,7 +148,7 @@ const calculateTrip = async (req, res) => {
       JSON.stringify(result.travelDay || {}),
       JSON.stringify(result.fixSuggestions || []),
       JSON.stringify(simulationScene || null),
-      1,
+      Number(simulationScene?.sceneVersion || 1),
       new Date(),
     ];
 

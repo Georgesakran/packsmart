@@ -1,5 +1,3 @@
-//packingSceneEngine.js
-
 const { buildBagZones } = require("./packingZones");
 const {
   makeBox,
@@ -10,10 +8,6 @@ const {
 const { resolveOrientations } = require("./packingOrientationResolver");
 const { buildPackingItemPhysicsProfile } = require("./packingItemPhysicsProfile");
 const { scorePlacementCandidate } = require("./packingPlacementScoring");
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
 
 function nearlyEqual(a, b, tolerance = 0.01) {
   return Math.abs(Number(a || 0) - Number(b || 0)) <= tolerance;
@@ -170,8 +164,12 @@ function estimateItemDimensionsCm(item) {
   };
 }
 
-function expandSceneItemsByQuantity(baseItem) {
-  const quantity = Math.max(1, Number(baseItem.quantity || 1));
+function expandSceneItemsByQuantity(baseItem, forcedQuantity = null) {
+  const quantity = Math.max(
+    1,
+    Number(forcedQuantity != null ? forcedQuantity : baseItem.quantity || 1)
+  );
+
   const expanded = [];
 
   for (let index = 0; index < quantity; index += 1) {
@@ -180,10 +178,7 @@ function expandSceneItemsByQuantity(baseItem) {
       quantity: 1,
       unitIndex: index + 1,
       sceneItemId: `${baseItem.tripItemId}-${index + 1}`,
-      name:
-        quantity > 1
-          ? `${baseItem.name} ${index + 1}`
-          : baseItem.name,
+      name: quantity > 1 ? `${baseItem.name} ${index + 1}` : baseItem.name,
     });
   }
 
@@ -207,34 +202,22 @@ function normalizeSceneItems(tripItems = []) {
       quantity,
       massG: unitWeightG,
       dimensionsCm,
-
       packing_status: item.packing_status || "pending",
       travel_day_mode: item.travel_day_mode || "normal",
-
       resolvedProfileKey: item.resolved_profile_key || null,
-      materialType:
-        item.resolved_material_type || item.material_type || null,
-      rigidityScore: Number(
-        item.resolved_rigidity_score || item.rigidity_score || 0
-      ),
+      materialType: item.resolved_material_type || item.material_type || null,
+      rigidityScore: Number(item.resolved_rigidity_score || item.rigidity_score || 0),
       compressibilityScore: Number(
-        item.resolved_compressibility_score ||
-          item.compressibility_score ||
-          0
+        item.resolved_compressibility_score || item.compressibility_score || 0
       ),
       stackabilityScore: Number(
         item.resolved_stackability_score || item.stackability_score || 0
       ),
       preferredOrientations:
-        item.resolved_preferred_orientations ||
-        item.preferred_orientations ||
-        [],
+        item.resolved_preferred_orientations || item.preferred_orientations || [],
       allowedOrientations:
-        item.resolved_allowed_orientations ||
-        item.allowed_orientations ||
-        [],
+        item.resolved_allowed_orientations || item.allowed_orientations || [],
       foldStyle: item.resolved_fold_type || item.fold_type || "auto",
-
       renderHint:
         item.resolved_render_hint || item.render_hint || buildRenderHint(item),
     };
@@ -242,10 +225,7 @@ function normalizeSceneItems(tripItems = []) {
     const expandedItems = expandSceneItemsByQuantity(baseNormalized);
 
     return expandedItems.map((expandedItem) => {
-      const normalizedUnit = {
-        ...expandedItem,
-      };
-
+      const normalizedUnit = { ...expandedItem };
       normalizedUnit.physicsProfile = buildPackingItemPhysicsProfile(normalizedUnit);
       return normalizedUnit;
     });
@@ -615,17 +595,99 @@ function buildBagSummary(placedItems = [], bagInner, bag) {
   };
 }
 
-function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
+function buildAssignedUnitsMap(bagResults = []) {
+  const byBag = new Map();
+
+  for (const bagResult of bagResults || []) {
+    const bagId = Number(bagResult.bagId || 0);
+    const bagItems = Array.isArray(bagResult.items) ? bagResult.items : [];
+    const bagMap = new Map();
+
+    for (const item of bagItems) {
+      const tripItemId = Number(item.id || 0);
+      const quantity = Math.max(0, Number(item.quantity || 0));
+
+      if (!tripItemId || quantity <= 0) continue;
+      bagMap.set(tripItemId, quantity);
+    }
+
+    byBag.set(bagId, bagMap);
+  }
+
+  return byBag;
+}
+
+function buildOverflowUnitsMap(overflowItems = []) {
+  const overflowMap = new Map();
+
+  for (const item of overflowItems || []) {
+    const tripItemId = Number(item.id || 0);
+    const quantity = Math.max(0, Number(item.quantity || 0));
+
+    if (!tripItemId || quantity <= 0) continue;
+    overflowMap.set(tripItemId, quantity);
+  }
+
+  return overflowMap;
+}
+
+function buildSceneItemsForBag(tripItems = [], bagAssignments = new Map()) {
+  const sceneItems = [];
+
+  for (const tripItem of tripItems) {
+    const tripItemId = Number(tripItem.id || 0);
+    const quantityForBag = Number(bagAssignments.get(tripItemId) || 0);
+
+    if (!tripItemId || quantityForBag <= 0) continue;
+
+    const normalizedUnits = normalizeSceneItems([
+      {
+        ...tripItem,
+        quantity: quantityForBag,
+      },
+    ]);
+
+    sceneItems.push(...normalizedUnits);
+  }
+
+  return sceneItems;
+}
+
+function buildOverflowSceneItems(tripItems = [], overflowUnitsMap = new Map()) {
+  const overflowSceneItems = [];
+
+  for (const tripItem of tripItems) {
+    const tripItemId = Number(tripItem.id || 0);
+    const quantityForOverflow = Number(overflowUnitsMap.get(tripItemId) || 0);
+
+    if (!tripItemId || quantityForOverflow <= 0) continue;
+
+    const normalizedUnits = normalizeSceneItems([
+      {
+        ...tripItem,
+        quantity: quantityForOverflow,
+      },
+    ]);
+
+    overflowSceneItems.push(...normalizedUnits);
+  }
+
+  return overflowSceneItems;
+}
+
+function buildSingleBagScene({ bag, sceneItems, stepStartNumber }) {
   const inner = normalizeInnerBagDimensionsCm(bag);
   const zones = buildBagZones(inner);
 
+  const sortedSceneItems = [...sceneItems].sort((a, b) => itemPriority(b) - itemPriority(a));
+
   const placedItems = [];
-  const overflow = [];
+  const notPlacedInsideScene = [];
   const steps = [];
 
   let stepNumber = stepStartNumber;
 
-  for (const item of sceneItems) {
+  for (const item of sortedSceneItems) {
     const preferredZones = getPreferredZones(item);
     const zoneCandidates = preferredZones
       .map((zoneKey) => zones.find((zone) => zone.zoneKey === zoneKey))
@@ -653,6 +715,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
           name: item.name,
           category: item.category,
           quantity: item.quantity,
+          unitIndex: item.unitIndex || null,
           massG: item.massG,
           zoneKey: zone.zoneKey,
           positionCm: candidate.positionCm,
@@ -671,6 +734,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
           placementScore: candidate.totalScore,
           placementScoreBreakdown: candidate.scoreBreakdown,
           placementIssues: candidate.placementIssues || [],
+          placementSuggestions: candidate.placementSuggestions || [],
         };
 
         if (
@@ -683,7 +747,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
     }
 
     if (!bestPlacement) {
-      overflow.push(item);
+      notPlacedInsideScene.push(item);
       continue;
     }
 
@@ -692,6 +756,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
     steps.push({
       stepNumber,
       tripItemId: bestPlacement.tripItemId,
+      sceneItemId: bestPlacement.sceneItemId,
       bagId: bag.id,
       instruction: `Place ${bestPlacement.name} in ${bestPlacement.zoneKey.replace(/_/g, " ")} of ${bag.name}.`,
       highlightItemIds: [bestPlacement.sceneItemId],
@@ -706,7 +771,7 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
     bagName: bag.name,
     requestedInBagPass: sceneItems.length,
     placedInBag: placedItems.length,
-    overflowInBag: overflow.length,
+    notPlacedInsideScene: notPlacedInsideScene.length,
   });
 
   return {
@@ -729,15 +794,20 @@ function buildSingleBagScene({ tripId, bag, sceneItems, stepStartNumber }) {
       summary: buildBagSummary(placedItems, inner, bag),
     },
     placedItems,
+    notPlacedInsideScene,
     steps,
-    overflow,
     nextStepNumber: stepNumber,
   };
 }
 
-console.log("hi");
-
-function buildPackingScene({ tripId, bag, bags, tripItems }) {
+function buildPackingScene({
+  tripId,
+  bag,
+  bags,
+  tripItems = [],
+  bagResults = [],
+  overflowItems = [],
+}) {
   const allBags =
     Array.isArray(bags) && bags.length > 0
       ? [...bags].sort((a, b) => getBagPriority(a) - getBagPriority(b))
@@ -745,85 +815,97 @@ function buildPackingScene({ tripId, bag, bags, tripItems }) {
       ? [bag]
       : [];
 
-  const normalizedItems = normalizeSceneItems(tripItems).sort(
-    (a, b) => itemPriority(b) - itemPriority(a)
-  );
+  const assignedUnitsByBag = buildAssignedUnitsMap(bagResults);
+  const authoritativeOverflowMap = buildOverflowUnitsMap(overflowItems);
 
-  let remainingItems = [...normalizedItems];
   const bagScenes = [];
   const allPlacedItems = [];
   const allSteps = [];
+  const scenePlacementFailures = [];
   let stepNumber = 1;
 
   for (const currentBag of allBags) {
-    if (remainingItems.length === 0) break;
+    const bagId = Number(currentBag.id || 0);
+    const bagAssignments = assignedUnitsByBag.get(bagId) || new Map();
+    const sceneItemsForBag = buildSceneItemsForBag(tripItems, bagAssignments);
+
+    if (!sceneItemsForBag.length) continue;
 
     const sceneResult = buildSingleBagScene({
-      tripId,
       bag: currentBag,
-      sceneItems: remainingItems,
+      sceneItems: sceneItemsForBag,
       stepStartNumber: stepNumber,
     });
 
     bagScenes.push(sceneResult.bagScene);
     allPlacedItems.push(...sceneResult.placedItems);
     allSteps.push(...sceneResult.steps);
-
-    const placedSceneItemIds = new Set(
-      sceneResult.placedItems.map(
-        (item) => item.sceneItemId || String(item.tripItemId)
-      )
-    );
-    
-    remainingItems = remainingItems.filter((item) => {
-      const itemKey = item.sceneItemId || String(item.tripItemId);
-      return !placedSceneItemIds.has(itemKey);
-    });
+    scenePlacementFailures.push(...sceneResult.notPlacedInsideScene);
 
     stepNumber = sceneResult.nextStepNumber;
   }
 
-  const summary = {
-    overallFits: remainingItems.length === 0,
-    overflowItemCount: remainingItems.length,
-    placedItemCount: allPlacedItems.length,
-    bagCount: bagScenes.length,
-  };
+  const authoritativeOverflowSceneItems = buildOverflowSceneItems(
+    tripItems,
+    authoritativeOverflowMap
+  );
+
+  const mergedOverflow = [
+    ...authoritativeOverflowSceneItems,
+    ...scenePlacementFailures,
+  ];
 
   console.log("PACKING SCENE COUNTS:", {
-    requestedItems: normalizedItems.length,
+    authoritativeBagItemCount: bagResults.reduce(
+      (sum, bagResult) =>
+        sum +
+        (Array.isArray(bagResult.items)
+          ? bagResult.items.reduce(
+              (innerSum, item) => innerSum + Number(item.quantity || 0),
+              0
+            )
+          : 0),
+      0
+    ),
     placedItems: allPlacedItems.length,
     stepCount: allSteps.length,
-    overflowItems: remainingItems.length,
-    overflowNames: remainingItems.map((item) => item.name),
+    authoritativeOverflowItems: authoritativeOverflowSceneItems.length,
+    scenePlacementFailures: scenePlacementFailures.length,
+    mergedOverflow: mergedOverflow.length,
+    mergedOverflowNames: mergedOverflow.map((item) => item.name),
   });
 
   return {
-    sceneVersion: 5,
+    sceneVersion: 6,
     tripId,
     generatedAt: new Date().toISOString(),
     bags: bagScenes,
     primaryBag: bagScenes[0] || null,
     items: allPlacedItems,
     steps: allSteps,
-    summary,
-    warnings: remainingItems.length
+    summary: {
+      overallFits: mergedOverflow.length === 0,
+      overflowItemCount: mergedOverflow.length,
+      placedItemCount: allPlacedItems.length,
+      bagCount: bagScenes.length,
+    },
+    warnings: mergedOverflow.length
       ? [
-          `${remainingItems.length} item${
-            remainingItems.length === 1 ? "" : "s"
-          } could not be placed in the available bags.`,
+          `${mergedOverflow.length} item${
+            mergedOverflow.length === 1 ? "" : "s"
+          } could not be shown as placed in the available bags.`,
         ]
       : [],
-      overflow: remainingItems.map((item) => ({
-        tripItemId: item.tripItemId,
-        sceneItemId: item.sceneItemId || String(item.tripItemId),
-        itemId: item.itemId,
-        name: item.name,
-        category: item.category,
-        quantity: item.quantity,
-        unitIndex: item.unitIndex || null,
-        reason: "No high-quality placement found inside the available bags.",
-      })),
+    overflow: mergedOverflow.map((item) => ({
+      tripItemId: item.tripItemId,
+      sceneItemId: item.sceneItemId || String(item.tripItemId),
+      itemId: item.itemId,
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      unitIndex: item.unitIndex || null,
+      reason: "Item remains outside the 3D placed scene.",
+    })),
   };
 }
 
