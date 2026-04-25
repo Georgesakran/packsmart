@@ -4,17 +4,31 @@ function clamp(value, min, max) {
 
 function buildBagZones(inner) {
   const width = Number(inner.width || 30);
-  const height = Number(inner.height || 20);
-  const depth = Number(inner.depth || 50);
+  const height = Number(inner.height || 50);
+  const depth = Number(inner.depth || 20);
 
-  const bottomHeight = clamp(Math.round(height * 0.5), 9, 12);
-  const middleHeight = clamp(Math.round(height * 0.25), 4, 6);
-  const topHeight = clamp(Math.round(height * 0.12), 2, 3);
+  // quick-access pocket at the top/front
+  const quickHeight = clamp(Math.round(height * 0.14), 4, 8);
 
-  let quickHeight = height - bottomHeight - middleHeight - topHeight;
-  quickHeight = clamp(quickHeight, 1, 3);
+  // main packing body must use the REST of the suitcase height fully
+  const mainHeight = Math.max(12, height - quickHeight);
 
-  const sideWidth = clamp(Math.round(width * 0.12), 3, 5);
+  let bottomHeight = Math.round(mainHeight * 0.38);
+  let middleHeight = Math.round(mainHeight * 0.34);
+
+  bottomHeight = Math.max(6, bottomHeight);
+  middleHeight = Math.max(6, middleHeight);
+
+  let topHeight = mainHeight - bottomHeight - middleHeight;
+
+  if (topHeight < 4) {
+    const shortage = 4 - topHeight;
+    middleHeight = Math.max(6, middleHeight - shortage);
+    topHeight = mainHeight - bottomHeight - middleHeight;
+  }
+
+  const sideWidth = Math.max(3, Math.round(width * 0.14));
+  const quickDepth = Math.max(5, Math.round(depth * 0.35));
 
   return [
     {
@@ -61,11 +75,11 @@ function buildBagZones(inner) {
       label: "Quick Access",
       boundsCm: {
         x: 0,
-        y: bottomHeight + middleHeight + topHeight,
+        y: mainHeight,
         z: 0,
         w: width,
         h: quickHeight,
-        d: Math.max(8, Math.round(depth * 0.3)),
+        d: quickDepth,
       },
       priority: 4,
     },
@@ -77,7 +91,7 @@ function buildBagZones(inner) {
         y: 0,
         z: 0,
         w: sideWidth,
-        h: bottomHeight + middleHeight,
+        h: mainHeight,
         d: depth,
       },
       priority: 5,
@@ -90,7 +104,7 @@ function buildBagZones(inner) {
         y: 0,
         z: 0,
         w: sideWidth,
-        h: bottomHeight + middleHeight,
+        h: mainHeight,
         d: depth,
       },
       priority: 6,
