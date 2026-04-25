@@ -2,6 +2,10 @@ function normalizeZoneKey(zoneKey = "") {
   return String(zoneKey || "").toLowerCase();
 }
 
+function normalizeCategory(category = "") {
+  return String(category || "").toLowerCase();
+}
+
 function clampScore(value) {
   return Math.max(0, Math.min(100, Number(value || 0)));
 }
@@ -75,10 +79,13 @@ function getFragilityPenalty(profile, supportType, zoneKey) {
   return Math.max(0, penalty);
 }
 
-function getZonePreferenceBonus(profile, zoneKey) {
+function getZonePreferenceBonus(profile, zoneKey, item) {
   if (!profile) return 0;
 
   const key = normalizeZoneKey(zoneKey);
+  const category = normalizeCategory(item?.category);
+  const massG = Number(item?.massG || 0);
+
   let bonus = 0;
 
   if (profile.preferAccessibleZones) {
@@ -104,6 +111,40 @@ function getZonePreferenceBonus(profile, zoneKey) {
   if (profile.avoidTopZone && key === "top_layer") {
     bonus -= 18;
   }
+
+  // Extra natural-placement bonuses
+  if (category === "shoes") {
+    if (key === "bottom_base") bonus += 28;
+    if (key === "middle_core") bonus += 10;
+    if (key === "top_layer") bonus -= 24;
+    if (key === "quick_access") bonus -= 28;
+  }
+
+  if (category === "bottoms") {
+    if (key === "bottom_base") bonus += 18;
+    if (key === "middle_core") bonus += 14;
+    if (key === "top_layer") bonus -= 18;
+  }
+
+  if (category === "clothing" || category === "outerwear") {
+    if (key === "middle_core") bonus += 18;
+    if (key === "bottom_base") bonus += 10;
+    if (key === "top_layer") bonus -= 20;
+  }
+
+  if (category === "underwear") {
+    if (key === "side_channel_left" || key === "side_channel_right") bonus += 12;
+    if (key === "top_layer") bonus += 4;
+  }
+
+  if (category === "toiletries") {
+    if (key === "bottom_base") bonus += 8;
+    if (key === "middle_core") bonus += 12;
+    if (key === "top_layer") bonus -= 8;
+  }
+
+  if (massG >= 500 && key === "bottom_base") bonus += 8;
+  if (massG >= 500 && key === "top_layer") bonus -= 14;
 
   return bonus;
 }
@@ -190,13 +231,19 @@ function getVerticalPlacementPenalty({
 }) {
   if (!bagInner) return 0;
 
+  const category = normalizeCategory(item?.category);
   const itemBottomY = Number(positionCm?.y || 0);
+  const itemHeight = Number(sizeCm?.h || 0);
+  const itemTopY = itemBottomY + itemHeight;
   const bagHeight = Number(bagInner?.height || 1);
-  const relativeHeight = bagHeight > 0 ? itemBottomY / bagHeight : 0;
+
+  const relativeBottom = bagHeight > 0 ? itemBottomY / bagHeight : 0;
+  const relativeTop = bagHeight > 0 ? itemTopY / bagHeight : 0;
 
   const massG = Number(item?.massG || 0);
   const fragility = Number(profile?.fragilityScore || 0);
   const rigidity = Number(profile?.rigidityScore || 0);
+  const compressibility = Number(profile?.compressibilityScore || 0);
 
   let penalty = 0;
 
@@ -204,15 +251,19 @@ function getVerticalPlacementPenalty({
     penalty += 8;
   }
 
-  if (relativeHeight > 0.55) {
+  if (relativeBottom > 0.55) {
     penalty += 10;
   }
 
-  if (relativeHeight > 0.7) {
-    penalty += 12;
+  if (relativeBottom > 0.7) {
+    penalty += 14;
   }
 
-  if (massG >= 600 && relativeHeight > 0.35) {
+  if (relativeTop > 0.82) {
+    penalty += 10;
+  }
+
+  if (massG >= 600 && relativeBottom > 0.35) {
     penalty += 18;
   }
 
@@ -232,6 +283,71 @@ function getVerticalPlacementPenalty({
     penalty += 16;
   }
 
+  // Clothing should not "float" high unless there is a very good reason
+  if (category === "clothing" || category === "outerwear") {
+    if (supportType === "stack") penalty += 16;
+    if (relativeBottom > 0.42) penalty += 12;
+    if (zoneKey === "top_layer") penalty += 18;
+    if (zoneKey === "quick_access") penalty += 14;
+  }
+
+  if (category === "bottoms") {
+    if (supportType === "stack") penalty += 12;
+    if (relativeBottom > 0.45) penalty += 10;
+    if (zoneKey === "top_layer") penalty += 14;
+  }
+
+  if (category === "shoes") {
+    if (supportType === "stack") penalty += 28;
+    if (relativeBottom > 0.22) penalty += 24;
+    if (zoneKey === "middle_core") penalty += 8;
+    if (zoneKey === "top_layer") penalty += 26;
+    if (zoneKey === "quick_access") penalty += 30;
+  }
+
+  if (category === "toiletries") {
+    if (supportType === "stack" && compressibility < 35) penalty += 10;
+    if (relativeBottom > 0.55) penalty += 8;
+  }
+
+  if (category === "underwear") {
+    // Small items can be higher, but very high floating placements still look wrong
+    if (relativeBottom > 0.72) penalty += 8;
+  }
+
+  return penalty;
+}
+
+function getShelfPenalty({
+  item,
+  zoneKey,
+  supportType,
+  supportCoverageRatio,
+  sizeCm,
+  supportingItems = [],
+}) {
+  const category = normalizeCategory(item?.category);
+  const width = Number(sizeCm?.w || 0);
+  const depth = Number(sizeCm?.d || 0);
+  const area = width * depth;
+
+  let penalty = 0;
+
+  if (supportType !== "stack") return 0;
+
+  const categoriesSensitiveToShelfLook = ["clothing", "outerwear", "bottoms", "toiletries"];
+  if (!categoriesSensitiveToShelfLook.includes(category)) return 0;
+
+  if (area >= 120) penalty += 10;
+  if (area >= 160) penalty += 10;
+
+  if (supportCoverageRatio < 0.9) penalty += 12;
+  if (supportCoverageRatio < 0.8) penalty += 10;
+
+  if (zoneKey === "top_layer") penalty += 12;
+
+  if (supportingItems.length === 1) penalty += 8;
+
   return penalty;
 }
 
@@ -250,6 +366,7 @@ function buildPlacementIssues({
   const fragility = Number(profile?.fragilityScore || 0);
   const massG = Number(item?.massG || 0);
   const rigidity = Number(profile?.rigidityScore || 0);
+  const category = normalizeCategory(item?.category);
   const preferred = Array.isArray(profile?.preferredOrientations)
     ? profile.preferredOrientations
     : [];
@@ -296,10 +413,7 @@ function buildPlacementIssues({
     });
   }
 
-  if (
-    massG >= 700 &&
-    supportType === "stack"
-  ) {
+  if (massG >= 700 && supportType === "stack") {
     issues.push({
       code: "heavy_item_on_stack",
       severity: "high",
@@ -307,14 +421,23 @@ function buildPlacementIssues({
     });
   }
 
-  if (
-    rigidity >= 75 &&
-    supportType === "stack"
-  ) {
+  if (rigidity >= 75 && supportType === "stack") {
     issues.push({
       code: "rigid_item_on_stack",
       severity: "medium",
       message: "Rigid item is stacked above other items instead of being grounded.",
+    });
+  }
+
+  if (
+    (category === "clothing" || category === "outerwear" || category === "bottoms") &&
+    supportType === "stack" &&
+    Number(breakdown?.verticalPlacementPenalty || 0) >= 18
+  ) {
+    issues.push({
+      code: "floating_clothing_placement",
+      severity: "medium",
+      message: "This clothing item is placed higher than expected for a natural fold-and-pack layout.",
     });
   }
 
@@ -437,6 +560,14 @@ function buildPlacementSuggestions({
         });
         break;
 
+      case "floating_clothing_placement":
+        suggestions.push({
+          code: "lower_clothing_stack",
+          priority: "medium",
+          message: "Move this clothing item to bottom base or middle core for a more natural stack.",
+        });
+        break;
+
       case "heavy_off_center":
         suggestions.push({
           code: "move_heavy_to_center",
@@ -510,19 +641,18 @@ function scorePlacementCandidate({
   bagInner,
 }) {
   const zoneKey = zone?.zoneKey || "";
+
   const accessScore = getZoneAccessScore(zoneKey);
   const stabilityScore = getZoneStabilityScore(zoneKey);
   const supportScore = getSupportQualityScore(supportType, supportCoverageRatio);
-  const preferenceBonus = getZonePreferenceBonus(profile, zoneKey);
+  const preferenceBonus = getZonePreferenceBonus(profile, zoneKey, item);
   const orientationScore = getOrientationScore(profile, orientation?.label || "flat");
   const balanceScore = getHeavyItemBalanceScore(item, positionCm, bagInner, sizeCm);
   const compatibilityBonus = getBaseCompatibilityBonus(profile, supportingItems);
 
-  const compressionPenalty = getCompressionPenalty(
-    profile,
-    compressionAppliedRatio
-  );
+  const compressionPenalty = getCompressionPenalty(profile, compressionAppliedRatio);
   const fragilityPenalty = getFragilityPenalty(profile, supportType, zoneKey);
+
   const verticalPlacementPenalty = getVerticalPlacementPenalty({
     item,
     profile,
@@ -533,17 +663,27 @@ function scorePlacementCandidate({
     bagInner,
   });
 
+  const shelfPenalty = getShelfPenalty({
+    item,
+    zoneKey: normalizeZoneKey(zoneKey),
+    supportType,
+    supportCoverageRatio,
+    sizeCm,
+    supportingItems,
+  });
+
   const total =
-    accessScore * 0.12 +
-    stabilityScore * 0.24 +
+    accessScore * 0.1 +
+    stabilityScore * 0.26 +
     supportScore * 0.24 +
-    orientationScore * 0.12 +
+    orientationScore * 0.1 +
     balanceScore * 0.14 +
     preferenceBonus +
     compatibilityBonus -
     compressionPenalty -
     fragilityPenalty -
-    verticalPlacementPenalty;
+    verticalPlacementPenalty -
+    shelfPenalty;
 
   const breakdown = {
     accessScore,
@@ -556,6 +696,7 @@ function scorePlacementCandidate({
     compressionPenalty,
     fragilityPenalty,
     verticalPlacementPenalty,
+    shelfPenalty,
   };
 
   const issues = buildPlacementIssues({
