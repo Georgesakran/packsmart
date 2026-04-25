@@ -10,8 +10,6 @@ const { buildPackingItemPhysicsProfile } = require("./packingItemPhysicsProfile"
 const { scorePlacementCandidate } = require("./packingPlacementScoring");
 
 
-
-
 function nearlyEqual(a, b, tolerance = 0.01) {
   return Math.abs(Number(a || 0) - Number(b || 0)) <= tolerance;
 }
@@ -493,7 +491,6 @@ function resolveCompressionForPlacement(item, orientation, zoneKey, supportType 
     compressionAppliedRatio,
   };
 }
-
 
 function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
   const supportCandidates = getSupportCandidates(
