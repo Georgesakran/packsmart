@@ -25,11 +25,11 @@ function getZoneAccessScore(zoneKey) {
 function getZoneStabilityScore(zoneKey) {
   const key = normalizeZoneKey(zoneKey);
 
-  if (key === "bottom_base") return 98;
-  if (key === "middle_core") return 78;
-  if (key === "top_layer") return 42;
-  if (key === "side_channel_left" || key === "side_channel_right") return 48;
-  if (key === "quick_access") return 34;
+  if (key === "bottom_base") return 96;
+  if (key === "middle_core") return 82;
+  if (key === "top_layer") return 58;
+  if (key === "side_channel_left" || key === "side_channel_right") return 56;
+  if (key === "quick_access") return 44;
 
   return 50;
 }
@@ -39,13 +39,13 @@ function getSupportQualityScore(supportType = "floor", supportCoverageRatio = 0)
 
   const ratio = Number(supportCoverageRatio || 0);
 
-  if (ratio >= 0.95) return 92;
-  if (ratio >= 0.85) return 82;
-  if (ratio >= 0.75) return 68;
-  if (ratio >= 0.65) return 52;
-  if (ratio >= 0.55) return 36;
+  if (ratio >= 0.9) return 88;
+  if (ratio >= 0.8) return 78;
+  if (ratio >= 0.7) return 66;
+  if (ratio >= 0.6) return 54;
+  if (ratio >= 0.5) return 40;
 
-  return 18;
+  return 22;
 }
 
 function getCompressionPenalty(profile, compressionAppliedRatio = 1) {
@@ -231,88 +231,46 @@ function getVerticalPlacementPenalty({
 }) {
   if (!bagInner) return 0;
 
-  const category = normalizeCategory(item?.category);
   const itemBottomY = Number(positionCm?.y || 0);
-  const itemHeight = Number(sizeCm?.h || 0);
-  const itemTopY = itemBottomY + itemHeight;
   const bagHeight = Number(bagInner?.height || 1);
-
-  const relativeBottom = bagHeight > 0 ? itemBottomY / bagHeight : 0;
-  const relativeTop = bagHeight > 0 ? itemTopY / bagHeight : 0;
+  const relativeHeight = bagHeight > 0 ? itemBottomY / bagHeight : 0;
 
   const massG = Number(item?.massG || 0);
   const fragility = Number(profile?.fragilityScore || 0);
   const rigidity = Number(profile?.rigidityScore || 0);
-  const compressibility = Number(profile?.compressibilityScore || 0);
 
   let penalty = 0;
 
   if (supportType === "stack") {
+    penalty += 4;
+  }
+
+  if (relativeHeight > 0.6) {
+    penalty += 6;
+  }
+
+  if (relativeHeight > 0.78) {
     penalty += 8;
   }
 
-  if (relativeBottom > 0.55) {
+  if (massG >= 600 && relativeHeight > 0.45) {
     penalty += 10;
-  }
-
-  if (relativeBottom > 0.7) {
-    penalty += 14;
-  }
-
-  if (relativeTop > 0.82) {
-    penalty += 10;
-  }
-
-  if (massG >= 600 && relativeBottom > 0.35) {
-    penalty += 18;
   }
 
   if (massG >= 900 && supportType === "stack") {
-    penalty += 24;
+    penalty += 14;
   }
 
   if (rigidity >= 75 && supportType === "stack") {
-    penalty += 12;
+    penalty += 8;
   }
 
   if (fragility >= 70 && supportType === "stack") {
-    penalty += 18;
+    penalty += 10;
   }
 
   if (zoneKey === "top_layer" && massG >= 450) {
-    penalty += 16;
-  }
-
-  // Clothing should not "float" high unless there is a very good reason
-  if (category === "clothing" || category === "outerwear") {
-    if (supportType === "stack") penalty += 16;
-    if (relativeBottom > 0.42) penalty += 12;
-    if (zoneKey === "top_layer") penalty += 18;
-    if (zoneKey === "quick_access") penalty += 14;
-  }
-
-  if (category === "bottoms") {
-    if (supportType === "stack") penalty += 12;
-    if (relativeBottom > 0.45) penalty += 10;
-    if (zoneKey === "top_layer") penalty += 14;
-  }
-
-  if (category === "shoes") {
-    if (supportType === "stack") penalty += 28;
-    if (relativeBottom > 0.22) penalty += 24;
-    if (zoneKey === "middle_core") penalty += 8;
-    if (zoneKey === "top_layer") penalty += 26;
-    if (zoneKey === "quick_access") penalty += 30;
-  }
-
-  if (category === "toiletries") {
-    if (supportType === "stack" && compressibility < 35) penalty += 10;
-    if (relativeBottom > 0.55) penalty += 8;
-  }
-
-  if (category === "underwear") {
-    // Small items can be higher, but very high floating placements still look wrong
-    if (relativeBottom > 0.72) penalty += 8;
+    penalty += 8;
   }
 
   return penalty;

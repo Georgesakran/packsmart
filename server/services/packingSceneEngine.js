@@ -332,14 +332,12 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
   const itemMassG = Number(item.massG || 0);
   const itemRigidity = Number(profile.rigidityScore || 0);
   const itemSupportNeed = Number(profile.supportNeedScore || 0);
-  const itemArea = Number(sizeCm.w || 0) * Number(sizeCm.d || 0);
 
-  // Heavy / rigid / fragile-support items stay grounded
+  // فقط العناصر الثقيلة جدًا أو الصلبة جدًا نخليها أرضية فقط
   if (
-    itemMassG >= 450 ||
-    itemRigidity >= 70 ||
-    itemSupportNeed >= 65 ||
-    profile.shouldNotBeCompressed
+    itemMassG >= 900 ||
+    itemRigidity >= 88 ||
+    itemSupportNeed >= 88
   ) {
     return supportCandidates;
   }
@@ -356,25 +354,17 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
     const placedStackability = Number(placed.stackabilityScore || 0);
     const placedRigidity = Number(placed.rigidityScore || 0);
     const placedMassG = Number(placed.massG || 0);
-    const placedArea =
+
+    const baseArea =
       Number(placed.sizeCm?.w || 0) * Number(placed.sizeCm?.d || 0);
+    const itemArea = Number(sizeCm.w || 0) * Number(sizeCm.d || 0);
+    const areaRatio = itemArea > 0 ? baseArea / itemArea : 0;
 
-    const areaRatio = itemArea > 0 ? placedArea / itemArea : 0;
-
-    // only grounded bases
     if (placedSupportType !== "floor") continue;
-
-    // must explicitly be usable as a base
     if (!placed.canBeStackBase) continue;
-
-    // base must be stable enough
-    if (placedStackability < 78) continue;
-
-    // base cannot be too soft/light
-    if (placedRigidity < 35 && placedMassG < 300) continue;
-
-    // base footprint must be wide enough
-    if (areaRatio < 0.85) continue;
+    if (placedStackability < 60) continue;
+    if (placedRigidity < 18 && placedMassG < 160) continue;
+    if (areaRatio < 0.58) continue;
 
     supportCandidates.push({
       y: placedTopY,
@@ -396,11 +386,13 @@ function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems, item = nu
   const itemMassG = Number(item?.massG || 0);
   const itemRigidity = Number(profile.rigidityScore || 0);
 
-  let neededCoverageRatio = 0.78;
+  let neededCoverageRatio = 0.6;
 
-  if (itemMassG >= 400) neededCoverageRatio = 0.84;
-  if (itemMassG >= 700 || itemRigidity >= 75) neededCoverageRatio = 0.9;
-  if (profile.shouldNotBeCompressed) neededCoverageRatio = Math.max(neededCoverageRatio, 0.88);
+  if (itemMassG >= 450) neededCoverageRatio = 0.68;
+  if (itemMassG >= 700 || itemRigidity >= 75) neededCoverageRatio = 0.78;
+  if (profile.shouldNotBeCompressed) {
+    neededCoverageRatio = Math.max(neededCoverageRatio, 0.74);
+  }
 
   const supporters = placedItems.filter((placed) => {
     const topY = Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
@@ -410,7 +402,7 @@ function hasSupportForPlacement(positionCm, sizeCm, zone, placedItems, item = nu
     const placedStackability = Number(placed.stackabilityScore || 0);
 
     if (placedSupportType !== "floor") return false;
-    if (!placed.canBeStackBase && placedStackability < 75) return false;
+    if (!placed.canBeStackBase && placedStackability < 65) return false;
 
     const xOverlap = getOverlapLength(
       positionCm.x,
