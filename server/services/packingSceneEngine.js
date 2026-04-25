@@ -1,3 +1,4 @@
+//packingSceneEngine.js
 const { buildBagZones } = require("./packingZones");
 const {
   makeBox,
@@ -656,7 +657,9 @@ function buildAssignedUnitsMap(bagResults = []) {
       const quantity = Math.max(0, Number(item.quantity || 0));
 
       if (!tripItemId || quantity <= 0) continue;
-      bagMap.set(tripItemId, quantity);
+
+      const existingQuantity = Number(bagMap.get(tripItemId) || 0);
+      bagMap.set(tripItemId, existingQuantity + quantity);
     }
 
     byBag.set(bagId, bagMap);
@@ -673,7 +676,9 @@ function buildOverflowUnitsMap(overflowItems = []) {
     const quantity = Math.max(0, Number(item.quantity || 0));
 
     if (!tripItemId || quantity <= 0) continue;
-    overflowMap.set(tripItemId, quantity);
+
+    const existingQuantity = Number(overflowMap.get(tripItemId) || 0);
+    overflowMap.set(tripItemId, existingQuantity + quantity);
   }
 
   return overflowMap;
