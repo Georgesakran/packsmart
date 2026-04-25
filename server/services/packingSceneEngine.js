@@ -55,13 +55,14 @@ function buildRenderHint(item) {
 function getPreferredZones(item) {
   const category = String(item.category || "").toLowerCase();
   const travelDayMode = String(item.travel_day_mode || "normal").toLowerCase();
+  const profile = item.physicsProfile || {};
 
   if (travelDayMode === "keep_accessible") {
     return ["quick_access", "top_layer", "side_channel_left", "side_channel_right", "middle_core"];
   }
 
   if (category === "documents") {
-    return ["quick_access", "top_layer"];
+    return ["quick_access", "top_layer", "middle_core"];
   }
 
   if (category === "tech") {
@@ -69,31 +70,35 @@ function getPreferredZones(item) {
   }
 
   if (category === "accessories") {
-    return ["quick_access", "top_layer", "side_channel_left", "side_channel_right"];
+    return ["quick_access", "side_channel_left", "side_channel_right", "top_layer", "middle_core"];
   }
 
   if (category === "toiletries") {
-    return ["top_layer", "middle_core", "bottom_base"];
+    return ["middle_core", "bottom_base", "top_layer"];
   }
 
   if (category === "shoes") {
-    return ["bottom_base", "middle_core", "top_layer", "side_channel_left", "side_channel_right"];
+    return ["bottom_base", "middle_core", "side_channel_left", "side_channel_right", "top_layer"];
   }
 
   if (category === "underwear") {
-    return ["side_channel_left", "side_channel_right", "top_layer", "middle_core"];
+    return ["side_channel_left", "side_channel_right", "middle_core", "top_layer", "bottom_base"];
   }
 
   if (category === "bottoms") {
-    return ["middle_core", "bottom_base"];
+    return ["bottom_base", "middle_core", "top_layer"];
   }
 
   if (category === "outerwear") {
-    return ["middle_core", "top_layer", "bottom_base"];
+    return ["middle_core", "bottom_base", "top_layer"];
   }
 
   if (category === "clothing") {
-    return ["middle_core", "top_layer", "bottom_base"];
+    return ["middle_core", "bottom_base", "top_layer"];
+  }
+
+  if (profile.preferCenterZones) {
+    return ["middle_core", "bottom_base", "top_layer"];
   }
 
   return ["middle_core", "bottom_base", "top_layer"];
@@ -327,12 +332,13 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
   const itemMassG = Number(item.massG || 0);
   const itemRigidity = Number(profile.rigidityScore || 0);
   const itemSupportNeed = Number(profile.supportNeedScore || 0);
+  const itemArea = Number(sizeCm.w || 0) * Number(sizeCm.d || 0);
 
-  // Heavy / rigid / high-support items should prefer grounded placement only
+  // Heavy / rigid / fragile-support items stay grounded
   if (
-    itemMassG >= 550 ||
-    itemRigidity >= 75 ||
-    itemSupportNeed >= 70 ||
+    itemMassG >= 450 ||
+    itemRigidity >= 70 ||
+    itemSupportNeed >= 65 ||
     profile.shouldNotBeCompressed
   ) {
     return supportCandidates;
@@ -350,18 +356,25 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
     const placedStackability = Number(placed.stackabilityScore || 0);
     const placedRigidity = Number(placed.rigidityScore || 0);
     const placedMassG = Number(placed.massG || 0);
-
-    const baseArea =
+    const placedArea =
       Number(placed.sizeCm?.w || 0) * Number(placed.sizeCm?.d || 0);
-    const itemArea = Number(sizeCm.w || 0) * Number(sizeCm.d || 0);
-    const areaRatio = itemArea > 0 ? baseArea / itemArea : 0;
 
-    // Only allow stacked support on grounded, stable, fairly wide bases
+    const areaRatio = itemArea > 0 ? placedArea / itemArea : 0;
+
+    // only grounded bases
     if (placedSupportType !== "floor") continue;
+
+    // must explicitly be usable as a base
     if (!placed.canBeStackBase) continue;
-    if (placedStackability < 72) continue;
-    if (placedRigidity < 26 && placedMassG < 250) continue;
-    if (areaRatio < 0.72) continue;
+
+    // base must be stable enough
+    if (placedStackability < 78) continue;
+
+    // base cannot be too soft/light
+    if (placedRigidity < 35 && placedMassG < 300) continue;
+
+    // base footprint must be wide enough
+    if (areaRatio < 0.85) continue;
 
     supportCandidates.push({
       y: placedTopY,
@@ -545,7 +558,6 @@ function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
       const collision = placedItems.some((placed) =>
         boxesOverlap(candidateBox, makeBox(placed.positionCm, placed.sizeCm))
       );
-
       if (collision) continue;
 
       const scored = scorePlacementCandidate({
@@ -562,6 +574,19 @@ function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
         bagInner,
       });
 
+      const floorBonus = supportCandidate.supportType === "floor" ? 8 : 0;
+      const lowPlacementBonus = Math.max(0, 12 - candidate.y * 2.2);
+      const centerX = Number(bagInner?.width || 0) / 2;
+      const centerZ = Number(bagInner?.depth || 0) / 2;
+      const itemCenterX = Number(candidate.x || 0) + Number(sizeCm.w || 0) / 2;
+      const itemCenterZ = Number(candidate.z || 0) + Number(sizeCm.d || 0) / 2;
+      const offCenterDistance =
+        Math.abs(centerX - itemCenterX) + Math.abs(centerZ - itemCenterZ);
+      const centerBonus = Math.max(0, 6 - offCenterDistance * 0.25);
+
+      const visualPlacementBonus = floorBonus + lowPlacementBonus + centerBonus;
+      const finalScore = scored.totalScore + visualPlacementBonus;
+
       const evaluated = {
         positionCm: candidate,
         sizeCm,
@@ -569,13 +594,29 @@ function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
         supportType: supportCandidate.supportType,
         supportCoverageRatio: supportCheck.supportCoverageRatio,
         supportingItems: supportCheck.supportingItems,
-        totalScore: scored.totalScore,
+        totalScore: finalScore,
+        rawScore: scored.totalScore,
+        visualPlacementBonus,
         scoreBreakdown: scored.breakdown,
         placementIssues: scored.issues || [],
         placementSuggestions: scored.suggestions || [],
       };
 
-      if (!bestCandidate || evaluated.totalScore > bestCandidate.totalScore) {
+      if (!bestCandidate) {
+        bestCandidate = evaluated;
+        continue;
+      }
+
+      // if scores are close, prefer lower placement
+      if (evaluated.totalScore > bestCandidate.totalScore + 0.25) {
+        bestCandidate = evaluated;
+        continue;
+      }
+
+      if (
+        Math.abs(evaluated.totalScore - bestCandidate.totalScore) <= 0.25 &&
+        Number(evaluated.positionCm.y || 0) < Number(bestCandidate.positionCm.y || 0)
+      ) {
         bestCandidate = evaluated;
       }
     }
