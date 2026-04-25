@@ -23,8 +23,8 @@ function normalizeInnerBagDimensionsCm(bag) {
   return {
     length: outerLength,
     width: Math.max(12, outerWidth - 2),
-    height: Math.max(12, outerLength - 4),
-    depth: Math.max(10, outerHeight - 2),
+    height: Math.max(10, outerLength - 2),
+    depth: Math.max(12, outerHeight - 4),
   };
 }
 
