@@ -126,14 +126,10 @@ function resolveOrientations(item) {
   }
 
   // Folded garments: should stay flat in realistic packing
-  if (
-    category === "clothing" ||
-    category === "bottoms" ||
-    category === "outerwear"
-  ) {
+  if (category === "clothing" || category === "bottoms" || category === "outerwear") {
     return uniqueOrientations([
-      o.flat,
-      o.flat_rotated,
+      base[0], // flat
+      base[3], // flat_rotated
     ]);
   }
 

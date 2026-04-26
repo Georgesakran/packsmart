@@ -238,6 +238,9 @@ function getVerticalPlacementPenalty({
   const massG = Number(item?.massG || 0);
   const fragility = Number(profile?.fragilityScore || 0);
   const rigidity = Number(profile?.rigidityScore || 0);
+  const category = String(item?.category || "").toLowerCase();
+
+
 
   let penalty = 0;
 
@@ -272,7 +275,17 @@ function getVerticalPlacementPenalty({
   if (zoneKey === "top_layer" && massG >= 450) {
     penalty += 8;
   }
+  if ((category === "clothing" || category === "bottoms") && relativeHeight > 0.28) {
+    penalty += 18;
+  }
 
+  if ((category === "clothing" || category === "bottoms") && supportType === "stack") {
+    penalty += 22;
+  }
+  
+  if (category === "underwear" && relativeHeight > 0.45) {
+    penalty += 8;
+  }
   return penalty;
 }
 

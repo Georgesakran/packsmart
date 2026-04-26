@@ -55,14 +55,13 @@ function buildRenderHint(item) {
 function getPreferredZones(item) {
   const category = String(item.category || "").toLowerCase();
   const travelDayMode = String(item.travel_day_mode || "normal").toLowerCase();
-  const profile = item.physicsProfile || {};
 
   if (travelDayMode === "keep_accessible") {
-    return ["quick_access", "top_layer", "side_channel_left", "side_channel_right", "middle_core"];
+    return ["quick_access", "top_layer", "side_channel_left", "side_channel_right"];
   }
 
   if (category === "documents") {
-    return ["quick_access", "top_layer", "middle_core"];
+    return ["quick_access", "top_layer"];
   }
 
   if (category === "tech") {
@@ -70,38 +69,34 @@ function getPreferredZones(item) {
   }
 
   if (category === "accessories") {
-    return ["quick_access", "side_channel_left", "side_channel_right", "top_layer", "middle_core"];
+    return ["side_channel_left", "side_channel_right", "top_layer"];
   }
 
   if (category === "toiletries") {
-    return ["middle_core", "bottom_base", "top_layer"];
+    return ["bottom_base", "middle_core"];
   }
 
   if (category === "shoes") {
-    return ["bottom_base", "middle_core", "side_channel_left", "side_channel_right", "top_layer"];
+    return ["bottom_base"];
   }
 
   if (category === "underwear") {
-    return ["side_channel_left", "side_channel_right", "middle_core", "top_layer", "bottom_base"];
+    return ["side_channel_left", "side_channel_right", "bottom_base", "middle_core"];
   }
 
   if (category === "bottoms") {
-    return ["bottom_base", "middle_core", "top_layer"];
+    return ["bottom_base", "middle_core"];
   }
 
   if (category === "outerwear") {
-    return ["middle_core", "bottom_base", "top_layer"];
+    return ["bottom_base", "middle_core"];
   }
 
   if (category === "clothing") {
-    return ["middle_core", "bottom_base", "top_layer"];
+    return ["bottom_base", "middle_core"];
   }
 
-  if (profile.preferCenterZones) {
-    return ["middle_core", "bottom_base", "top_layer"];
-  }
-
-  return ["middle_core", "bottom_base", "top_layer"];
+  return ["bottom_base", "middle_core", "top_layer"];
 }
 
 function getBagPriority(bag) {
@@ -266,6 +261,15 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   const category = String(item.category || "").toLowerCase();
   const candidates = [];
 
+  const stepX = Math.max(1, Math.round(sizeCm.w * 0.35));
+  const stepZ = Math.max(1, Math.round(sizeCm.d * 0.35));
+
+  for (let z = minZ; z <= maxZ; z += stepZ) {
+    for (let x = minX; x <= maxX; x += stepX) {
+      candidates.push({ x, y: minY, z });
+    }
+  }
+
   if (zone.zoneKey === "bottom_base") {
     candidates.push(
       { x: minX, y: minY, z: minZ },
@@ -349,7 +353,11 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
       Number(placed.positionCm.y || 0) + Number(placed.sizeCm.h || 0);
 
     if (placedTopY + sizeCm.h > zone.boundsCm.y + zone.boundsCm.h) continue;
-
+    if (placedTopY > zone.boundsCm.y + zone.boundsCm.h * 0.55) continue;
+    if (areaRatio < 0.9) continue;
+    if (String(item.category || "").toLowerCase() === "clothing") {
+      return supportCandidates;
+    }
     const placedSupportType = String(placed.supportType || "floor").toLowerCase();
     const placedStackability = Number(placed.stackabilityScore || 0);
     const placedRigidity = Number(placed.rigidityScore || 0);
