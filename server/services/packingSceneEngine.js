@@ -23,8 +23,8 @@ function normalizeInnerBagDimensionsCm(bag) {
   return {
     length: outerLength,
     width: Math.max(12, outerWidth - 2),
-    height: Math.max(10, outerLength - 2),
-    depth: Math.max(12, outerHeight - 4),
+    height: Math.max(10, outerLength - 6),
+    depth: Math.max(10, outerHeight - 3),
   };
 }
 
@@ -261,16 +261,16 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   const category = String(item.category || "").toLowerCase();
   const candidates = [];
 
-  const stepX = Math.max(1, Math.round(sizeCm.w * 0.35));
-  const stepZ = Math.max(1, Math.round(sizeCm.d * 0.35));
-
-  for (let z = minZ; z <= maxZ; z += stepZ) {
-    for (let x = minX; x <= maxX; x += stepX) {
-      candidates.push({ x, y: minY, z });
-    }
-  }
-
   if (zone.zoneKey === "bottom_base") {
+    const stepX = Math.max(1, Math.round(sizeCm.w * 0.45));
+    const stepZ = Math.max(1, Math.round(sizeCm.d * 0.45));
+
+    for (let z = minZ; z <= maxZ; z += stepZ) {
+      for (let x = minX; x <= maxX; x += stepX) {
+        candidates.push({ x, y: minY, z });
+      }
+    }
+
     candidates.push(
       { x: minX, y: minY, z: minZ },
       { x: maxX, y: minY, z: minZ },
@@ -283,8 +283,7 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
     candidates.push(
       { x: minX, y: minY, z: minZ },
       { x: centerX, y: minY, z: minZ },
-      { x: maxX, y: minY, z: minZ },
-      { x: minX, y: minY, z: centerZ }
+      { x: maxX, y: minY, z: minZ }
     );
   } else if (
     zone.zoneKey === "side_channel_left" ||
@@ -292,17 +291,24 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   ) {
     candidates.push(
       { x: minX, y: minY, z: minZ },
-      { x: minX, y: minY, z: centerZ },
-      { x: minX, y: maxY, z: minZ }
+      { x: minX, y: minY, z: centerZ }
     );
   } else {
+    const stepX = Math.max(1, Math.round(sizeCm.w * 0.5));
+    const stepZ = Math.max(1, Math.round(sizeCm.d * 0.5));
+
+    for (let z = minZ; z <= maxZ; z += stepZ) {
+      for (let x = minX; x <= maxX; x += stepX) {
+        candidates.push({ x, y: minY, z });
+      }
+    }
+
     candidates.push(
       { x: minX, y: minY, z: minZ },
       { x: centerX, y: minY, z: minZ },
       { x: maxX, y: minY, z: minZ },
       { x: minX, y: minY, z: centerZ },
-      { x: centerX, y: minY, z: centerZ },
-      { x: maxX, y: minY, z: centerZ }
+      { x: centerX, y: minY, z: centerZ }
     );
   }
 
@@ -336,8 +342,18 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
   const itemMassG = Number(item.massG || 0);
   const itemRigidity = Number(profile.rigidityScore || 0);
   const itemSupportNeed = Number(profile.supportNeedScore || 0);
+  const itemCategory = String(item.category || "").toLowerCase();
 
-  // فقط العناصر الثقيلة جدًا أو الصلبة جدًا نخليها أرضية فقط
+  // clothes / bottoms / outerwear: prefer grounded realistic packing only
+  if (
+    itemCategory === "clothing" ||
+    itemCategory === "bottoms" ||
+    itemCategory === "outerwear"
+  ) {
+    return supportCandidates;
+  }
+
+  // very heavy / very rigid / very support-sensitive => floor only
   if (
     itemMassG >= 900 ||
     itemRigidity >= 88 ||
@@ -354,10 +370,7 @@ function getSupportCandidates(zone, placedItems, item, sizeCm) {
 
     if (placedTopY + sizeCm.h > zone.boundsCm.y + zone.boundsCm.h) continue;
     if (placedTopY > zone.boundsCm.y + zone.boundsCm.h * 0.55) continue;
-    if (areaRatio < 0.9) continue;
-    if (String(item.category || "").toLowerCase() === "clothing") {
-      return supportCandidates;
-    }
+
     const placedSupportType = String(placed.supportType || "floor").toLowerCase();
     const placedStackability = Number(placed.stackabilityScore || 0);
     const placedRigidity = Number(placed.rigidityScore || 0);

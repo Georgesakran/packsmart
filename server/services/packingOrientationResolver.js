@@ -1,5 +1,3 @@
-// services/packingOrientationResolver.js
-
 function uniqueOrientations(candidates = []) {
   const seen = new Set();
 
@@ -68,7 +66,6 @@ function resolveOrientations(item) {
 
   const o = buildBaseOrientations(w, h, d);
 
-  // Documents: mostly flat, sometimes flat rotated, upright only as fallback
   if (category === "documents") {
     return uniqueOrientations([
       o.flat,
@@ -77,7 +74,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Tech: prefer flat and stable placements, upright only fallback
   if (category === "tech") {
     return uniqueOrientations([
       o.flat,
@@ -86,8 +82,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Shoes: grounded and realistic only
-  // no weird upright hanging candidates
   if (category === "shoes") {
     return uniqueOrientations([
       o.flat,
@@ -96,7 +90,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Toiletries: flat first, side second, upright only as last resort
   if (category === "toiletries") {
     return uniqueOrientations([
       o.flat,
@@ -106,7 +99,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Underwear / socks / soft fillers
   if (category === "underwear") {
     return uniqueOrientations([
       o.side,
@@ -115,7 +107,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Accessories: can fill gaps, but still avoid crazy rotations
   if (category === "accessories") {
     return uniqueOrientations([
       o.side,
@@ -125,15 +116,13 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Folded garments: should stay flat in realistic packing
   if (category === "clothing" || category === "bottoms" || category === "outerwear") {
     return uniqueOrientations([
-      base[0], // flat
-      base[3], // flat_rotated
+      o.flat,
+      o.flat_rotated,
     ]);
   }
 
-  // Keep-accessible items: allow a little flexibility, but still not everything
   if (travelDayMode === "keep_accessible") {
     return uniqueOrientations([
       o.flat,
@@ -142,7 +131,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Respect profile if item is marked as keepFlat
   if (profile.keepFlat) {
     return uniqueOrientations([
       o.flat,
@@ -150,7 +138,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Respect profile if item should stay upright
   if (profile.keepUpright) {
     return uniqueOrientations([
       o.upright,
@@ -158,7 +145,6 @@ function resolveOrientations(item) {
     ]);
   }
 
-  // Default: conservative
   return uniqueOrientations([
     o.flat,
     o.flat_rotated,
