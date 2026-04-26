@@ -5,6 +5,7 @@ const { calculatePackingResult } = require("../services/packingCalculationEngine
 const { logTripActivity } = require("../utils/tripActivityLogger");
 const { resolveTripItemPackingProfile } = require("../services/packingProfileResolver");
 const { buildPackingScene } = require("../services/packingSceneEngine");
+const { solvePackingWithPython } = require("../services/pythonPackingSolverService");
 
 const getOwnedTrip = async (tripId, userId) => {
   const rows = await queryAsync(
@@ -103,23 +104,40 @@ const calculateTrip = async (req, res) => {
       selectedBags,
       tripItems: resolvedTripItems,
     });
-
+    
     const primaryBag =
       Array.isArray(selectedBags) && selectedBags.length > 0
         ? selectedBags[0]
         : null;
-
+    
     let simulationScene = null;
-
+    
     if (primaryBag) {
-      simulationScene = buildPackingScene({
-        tripId: Number(id),
-        bag: primaryBag,
-        bags: selectedBags,
-        tripItems: resolvedTripItems,
-        bagResults: result.bagResults || [],
-        overflowItems: result.overflowItems || [],
-      });
+      try {
+        const pythonSolverResult = await solvePackingWithPython({
+          tripId: Number(id),
+          bag: primaryBag,
+          tripItems: resolvedTripItems,
+        });
+    
+        simulationScene = pythonSolverResult.simulationScene;
+    
+        console.log("Python solver packed units:", {
+          packed: pythonSolverResult?.solverRaw?.packed_units?.length || 0,
+          unpacked: pythonSolverResult?.solverRaw?.unpacked_units?.length || 0,
+        });
+      } catch (solverError) {
+        console.error("Python solver failed, falling back to JS scene engine:", solverError.message);
+    
+        simulationScene = buildPackingScene({
+          tripId: Number(id),
+          bag: primaryBag,
+          bags: selectedBags,
+          tripItems: resolvedTripItems,
+          bagResults: result.bagResults || [],
+          overflowItems: result.overflowItems || [],
+        });
+      }
     }
 
     const existingRows = await queryAsync(

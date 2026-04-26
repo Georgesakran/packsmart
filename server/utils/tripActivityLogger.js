@@ -1,3 +1,4 @@
+// utils/tripActivityLogger.js
 const queryAsync = require("./queryAsync");
 
 const logTripActivity = async ({
