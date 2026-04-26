@@ -23,8 +23,8 @@ function normalizeInnerBagDimensionsCm(bag) {
   return {
     length: outerLength,
     width: Math.max(12, outerWidth - 2),
-    height: Math.max(10, outerLength - 6),
-    depth: Math.max(10, outerHeight - 3),
+    height: Math.max(12, outerLength - 4),
+    depth: Math.max(10, outerHeight - 2),
   };
 }
 
@@ -57,11 +57,11 @@ function getPreferredZones(item) {
   const travelDayMode = String(item.travel_day_mode || "normal").toLowerCase();
 
   if (travelDayMode === "keep_accessible") {
-    return ["quick_access", "top_layer", "side_channel_left", "side_channel_right"];
+    return ["quick_access", "top_layer", "side_channel_left", "side_channel_right", "middle_core"];
   }
 
   if (category === "documents") {
-    return ["quick_access", "top_layer"];
+    return ["quick_access", "top_layer", "middle_core"];
   }
 
   if (category === "tech") {
@@ -69,31 +69,31 @@ function getPreferredZones(item) {
   }
 
   if (category === "accessories") {
-    return ["side_channel_left", "side_channel_right", "top_layer"];
+    return ["side_channel_left", "side_channel_right", "top_layer", "middle_core"];
   }
 
   if (category === "toiletries") {
-    return ["bottom_base", "middle_core"];
+    return ["bottom_base", "middle_core", "top_layer"];
   }
 
   if (category === "shoes") {
-    return ["bottom_base"];
+    return ["bottom_base", "middle_core"];
   }
 
   if (category === "underwear") {
-    return ["side_channel_left", "side_channel_right", "bottom_base", "middle_core"];
+    return ["side_channel_left", "side_channel_right", "bottom_base", "middle_core", "top_layer"];
   }
 
   if (category === "bottoms") {
-    return ["bottom_base", "middle_core"];
+    return ["bottom_base", "middle_core", "top_layer"];
   }
 
   if (category === "outerwear") {
-    return ["bottom_base", "middle_core"];
+    return ["bottom_base", "middle_core", "top_layer"];
   }
 
   if (category === "clothing") {
-    return ["bottom_base", "middle_core"];
+    return ["bottom_base", "middle_core", "top_layer"];
   }
 
   return ["bottom_base", "middle_core", "top_layer"];
@@ -262,8 +262,8 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
   const candidates = [];
 
   if (zone.zoneKey === "bottom_base") {
-    const stepX = Math.max(1, Math.round(sizeCm.w * 0.45));
-    const stepZ = Math.max(1, Math.round(sizeCm.d * 0.45));
+    const stepX = Math.max(1, Math.round(sizeCm.w * 0.22));
+    const stepZ = Math.max(1, Math.round(sizeCm.d * 0.22));
 
     for (let z = minZ; z <= maxZ; z += stepZ) {
       for (let x = minX; x <= maxX; x += stepX) {
@@ -294,8 +294,8 @@ function getZonePlacementCandidates(zone, sizeCm, item) {
       { x: minX, y: minY, z: centerZ }
     );
   } else {
-    const stepX = Math.max(1, Math.round(sizeCm.w * 0.5));
-    const stepZ = Math.max(1, Math.round(sizeCm.d * 0.5));
+    const stepX = Math.max(1, Math.round(sizeCm.w * 0.28));
+    const stepZ = Math.max(1, Math.round(sizeCm.d * 0.28));
 
     for (let z = minZ; z <= maxZ; z += stepZ) {
       for (let x = minX; x <= maxX; x += stepX) {
@@ -587,15 +587,15 @@ function findBestPlacement(zone, orientation, placedItems, item, bagInner) {
         bagInner,
       });
 
-      const floorBonus = supportCandidate.supportType === "floor" ? 8 : 0;
-      const lowPlacementBonus = Math.max(0, 12 - candidate.y * 2.2);
+      const floorBonus = supportCandidate.supportType === "floor" ? 3 : 0;
+      const lowPlacementBonus = Math.max(0, 4 - candidate.y * 0.8);
       const centerX = Number(bagInner?.width || 0) / 2;
       const centerZ = Number(bagInner?.depth || 0) / 2;
       const itemCenterX = Number(candidate.x || 0) + Number(sizeCm.w || 0) / 2;
       const itemCenterZ = Number(candidate.z || 0) + Number(sizeCm.d || 0) / 2;
       const offCenterDistance =
         Math.abs(centerX - itemCenterX) + Math.abs(centerZ - itemCenterZ);
-      const centerBonus = Math.max(0, 6 - offCenterDistance * 0.25);
+      const centerBonus = Math.max(0, 2 - offCenterDistance * 0.08);
 
       const visualPlacementBonus = floorBonus + lowPlacementBonus + centerBonus;
       const finalScore = scored.totalScore + visualPlacementBonus;
